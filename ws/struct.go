@@ -13,6 +13,7 @@ var (
 	// enum for player Message
 	READY   int = 2
 	UNREADY int = 3
+	ALREADY int = 15
 	START   int = 4
 	PLAY    int = 5
 	UNPLAY  int = 6

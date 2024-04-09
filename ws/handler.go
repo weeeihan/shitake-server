@@ -23,7 +23,7 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 
 	// Register player into the room
 	player := &Player{
-		ID:     getPlayerID(),
+		ID:     getPlayerID(id),
 		Name:   c.Query("name"),
 		RoomID: id,
 	}
@@ -51,7 +51,7 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 		Ready:   0,
 	}
 
-	c.JSON(http.StatusOK, gin.H{"userID": player.ID, "roomID": id})
+	c.JSON(http.StatusOK, gin.H{"playerID": player.ID, "roomID": id})
 }
 
 func (h *Handler) JoinRoom(c *gin.Context) {
@@ -82,7 +82,7 @@ func (h *Handler) JoinRoom(c *gin.Context) {
 	}
 
 	// generate random ID
-	playerID := getPlayerID()
+	playerID := getPlayerID(roomID)
 
 	r := h.hub.Rooms[roomID]
 
@@ -135,6 +135,7 @@ func (h *Handler) ConnectToGame(c *gin.Context) {
 			Ready:   false,
 		}
 	} else {
+		room.Players[playerID].Ready = false
 		player = room.Players[playerID]
 		player.Conn = conn
 		player.Message = make(chan *Message, 10)
@@ -213,7 +214,7 @@ func (h *Handler) GetGame(c *gin.Context) {
 // LeaveRoom removes the player from the room
 func (h *Handler) LeaveRoom(c *gin.Context) {
 	playerID := c.Param("playerID")
-	roomID := h.hub.Rooms[playerID].ID
+	roomID := playerID[len(playerID)-4:]
 
 	if _, ok := h.hub.Rooms[roomID]; !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"Message": "Room does not exist"})
@@ -221,7 +222,9 @@ func (h *Handler) LeaveRoom(c *gin.Context) {
 	}
 
 	r := h.hub.Rooms[roomID]
+	g := h.hub.Games[roomID]
 	delete(r.Players, playerID)
+	delete(g.Players, playerID)
 
 	if len(r.Players) == 0 {
 		delete(h.hub.Rooms, roomID)
@@ -257,6 +260,7 @@ func (h *Handler) GetPlayer(c *gin.Context) {
 		Name:  r.Players[playerID].Name,
 		Hand:  r.Players[playerID].Hand,
 		Score: r.Players[playerID].Score,
+		Ready: r.Players[playerID].Ready,
 	}
 
 	c.JSON(http.StatusOK, player)

@@ -41,14 +41,14 @@ Again:
 	return newId
 }
 
-func getPlayerID() string {
+func getPlayerID(roomID string) string {
 	c := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	newId := ""
 	for i := 0; i < 32; i++ {
 		randN := (rand.Intn(62))
 		newId += string(c[randN])
 	}
-	return newId
+	return newId + roomID
 }
 
 func arrIntToString(arr []int) string {

@@ -17,6 +17,23 @@ func gameState(msgReq *MessageReq, hub *Hub, game *Game, p *Player) *Message {
 	case READY:
 		p.Ready = true
 		remark = fmt.Sprintf("Player %v turns ready!", p.ID)
+
+		if checkReady(players) {
+			if game.State != INIT {
+				remark = "Start game!"
+				state = CHOOSE_CARD
+				game.State = CHOOSE_CARD
+				room.State = PLAY
+				for _, p := range players {
+					p.Ready = false
+				}
+				initGame(hub.Games[p.RoomID])
+			} else {
+				state = ALREADY
+			}
+		}
+
+	case START:
 		if checkReady(players) {
 			remark = "Start game!"
 			state = CHOOSE_CARD
@@ -30,6 +47,7 @@ func gameState(msgReq *MessageReq, hub *Hub, game *Game, p *Player) *Message {
 
 	case UNREADY:
 		remark = fmt.Sprintf("Player %v turns NOT ready!", p.ID)
+		state = UNREADY
 		p.Ready = false
 
 	case PLAY:
@@ -82,14 +100,16 @@ func gameState(msgReq *MessageReq, hub *Hub, game *Game, p *Player) *Message {
 		playCards(game)
 		if len(p.Hand) == 0 {
 			// end game
-			endGame(game)
+			state = endGame(game)
+		} else {
+			state = CHOOSE_CARD
 		}
-		state = CHOOSE_CARD
 		// updatePlayers(players)
 
 	case LOBBY:
 		state = LOBBY
 		room.State = LOBBY
+		resetScore(game.Players)
 		remark = "Back to lobby!"
 
 	}
@@ -160,7 +180,7 @@ func endGame(game *Game) int {
 
 	var exceed bool
 	for _, p := range game.Players {
-		if p.Score >= 66 {
+		if p.Score >= 5 {
 			exceed = true
 			break
 		}
@@ -169,7 +189,6 @@ func endGame(game *Game) int {
 	if exceed {
 		// WE GOT A WINNER!
 		game.State = INIT
-		resetScore(game.Players)
 		return GAME_END
 		// go back to lobby
 	} else {

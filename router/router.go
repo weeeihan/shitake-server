@@ -16,7 +16,7 @@ func InitRouter(wsHandler *ws.Handler) {
 	// r.POST("/signup", wsHandler.CreateUser)
 	// r.POST("/newRoom", wsHandler.CreateRoom)
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"*"},
+		AllowOrigins:     []string{"http://localhost:3000"},
 		AllowMethods:     []string{"GET", "POST"},
 		AllowHeaders:     []string{"Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
