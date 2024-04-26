@@ -16,32 +16,37 @@ func NewHandler(h *Hub) *Handler {
 	}
 }
 
+func (h *Handler) GetStates(c *gin.Context) {
+	c.JSON(http.StatusOK, gamestates)
+}
+
 func (h *Handler) CreateRoom(c *gin.Context) {
 
 	// Generate room code
-	id := getRandID(h.hub.Rooms)
+	// id := getRandID(h.hub.Rooms)
+	id := "1111"
+
+	playerID := getPlayerID(id)
 
 	// Register player into the room
 	player := &Player{
-		ID:     getPlayerID(id),
-		Name:   c.Query("name"),
-		RoomID: id,
+		RoomID:  id,
+		ID:      playerID,
+		Name:    c.Query("name"),
+		Hand:    []int{},
+		Score:   0,
+		Ready:   false,
+		Message: make(chan *Message, 10),
 	}
+
 	players := make(map[string]*Player)
 	players[player.ID] = player
 
 	// Create room
 	h.hub.Rooms[id] = &Room{
 		ID:      id,
-		Players: players,
-		State:   LOBBY,
-	}
-
-	// Initialize game
-	h.hub.Games[id] = &Game{
-		ID:      id,
 		Deck:    [][]int{},
-		Players: make(map[string]*Player),
+		Players: players,
 		State:   INIT,
 		Played:  make(map[int]string),
 		Hands:   make(map[string][]int),
@@ -51,16 +56,17 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 		Ready:   0,
 	}
 
-	c.JSON(http.StatusOK, gin.H{"playerID": player.ID, "roomID": id})
+	c.JSON(http.StatusOK, gin.H{"roomID": id, "playerID": playerID})
+
 }
 
 func (h *Handler) JoinRoom(c *gin.Context) {
-
 	roomID := c.Param("roomID")
 	name := c.Query("name")
 
 	// check if room exists
 	if _, ok := h.hub.Rooms[roomID]; !ok {
+		log.Printf("Room does not exist!")
 		c.JSON(http.StatusBadRequest, gin.H{"Message": "Room does not exist!"})
 		return
 	}
@@ -68,7 +74,8 @@ func (h *Handler) JoinRoom(c *gin.Context) {
 	room := h.hub.Rooms[roomID]
 
 	// if room is not in lobby state
-	if room.State != LOBBY {
+	if room.State != INIT {
+		log.Printf("Room is not INIT")
 		c.JSON(http.StatusBadRequest, gin.H{"Message": "Game has already started"})
 		return
 	}
@@ -76,6 +83,7 @@ func (h *Handler) JoinRoom(c *gin.Context) {
 	// check if name is already used
 	for _, p := range h.hub.Rooms[roomID].Players {
 		if name == p.Name {
+			log.Printf("Name used")
 			c.JSON(http.StatusBadRequest, gin.H{"Message": "Name is used already, please choose another name!"})
 			return
 		}
@@ -84,73 +92,74 @@ func (h *Handler) JoinRoom(c *gin.Context) {
 	// generate random ID
 	playerID := getPlayerID(roomID)
 
+	// c.JSON(http.StatusOK, gin.H{"PlayerID": playerID})
 	r := h.hub.Rooms[roomID]
 
 	// Create player
 	player := &Player{
-		RoomID: roomID,
-		ID:     playerID,
-		Name:   name,
-		Hand:   []int{},
-		Score:  0,
+		RoomID:  roomID,
+		ID:      playerID,
+		Name:    name,
+		Hand:    []int{},
+		Score:   0,
+		Ready:   false,
+		Message: make(chan *Message, 10),
 	}
 
 	// Register player into the room
 	r.Players[player.ID] = player
 
-	log.Print(player)
+	c.JSON(http.StatusOK, gin.H{"PlayerID": playerID})
 
-	c.JSON(http.StatusOK, gin.H{"PlayerID": player.ID})
+	// h.hub.Register <- player
+	// h.hub.Broadcast <- createMsg(roomID, NEW_PLAYER_JOINED, "Player joined!")
+	// player.Message <- createMsg(roomID, REGISTERED, playerID)
+
+	// go player.writeMessages()
+	// player.readMessages(h.hub)
+}
+
+func (h *Handler) CheckPlayer(c *gin.Context) {
+	playerID := c.Param("playerID")
+	roomID := playerID[len(playerID)-4:]
+
+	if _, ok := h.hub.Rooms[roomID]; !ok {
+		log.Println("ROOMS dont exist")
+		c.JSON(http.StatusBadRequest, false)
+		return
+	}
+
+	r := h.hub.Rooms[roomID]
+	if _, ok := r.Players[playerID]; !ok {
+		log.Println("PLAYES DONT EXIST")
+		c.JSON(http.StatusBadRequest, false)
+		return
+	}
+
+	c.JSON(http.StatusOK, true)
+	// go player.writeMessages()
+	// player.readMessages(h.hub)
+
 }
 
 func (h *Handler) ConnectToGame(c *gin.Context) {
-	gameID := c.Param("gameID")
-	playerID := c.Query("playerID")
-
+	playerID := c.Param("playerID")
+	roomID := playerID[len(playerID)-4:]
+	player := h.hub.Rooms[roomID].Players[playerID]
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	log.Println(err)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	p := h.hub.Rooms[gameID].Players[playerID]
-	room := h.hub.Rooms[gameID]
-	game := h.hub.Games[gameID]
-
-	_, exists := room.Players[playerID]
-
-	var player *Player
-
-	if !exists {
-		log.Print("NOT IN GAME")
-		player = &Player{
-			ID:      p.ID,
-			RoomID:  gameID,
-			Name:    p.Name,
-			Conn:    conn,
-			Message: make(chan *Message, 10),
-			Hand:    []int{},
-			Score:   0,
-			Play:    0,
-			Ready:   false,
-		}
-	} else {
-		room.Players[playerID].Ready = false
-		player = room.Players[playerID]
-		player.Conn = conn
-		player.Message = make(chan *Message, 10)
-	}
-	game.Players[player.ID] = player
-
+	player.Ready = false
+	player.Conn = conn
 	h.hub.Register <- player
-	h.hub.Broadcast <- &Message{
-		GameID: gameID,
-		State:  NEW_PLAYER_JOINED,
-		Remark: "Player joined!",
-	}
 
 	go player.writeMessages()
 	player.readMessages(h.hub)
+
 }
 
 func (h *Handler) GetRooms(c *gin.Context) {
@@ -177,39 +186,41 @@ func (h *Handler) GetRoom(c *gin.Context) {
 	c.JSON(http.StatusOK, RoomRes{
 		ID:      r.ID,
 		State:   r.State,
+		Deck:    r.Deck,
 		Players: playersArr(r.Players),
 	})
 }
 
-func (h *Handler) GetGames(c *gin.Context) {
-	games := make([]GameRes, 0)
-	for _, g := range h.hub.Games {
-		games = append(games, GameRes{
-			ID:      g.ID,
-			Deck:    g.Deck,
-			State:   g.State,
-			Players: playersArr(g.Players),
-		})
-	}
-	c.JSON(http.StatusOK, games)
-}
+// func (h *Handler) GetGames(c *gin.Context) {
+// 	games := make([]GameRes, 0)
+// 	for _, g := range h.hub.Games {
+// 		games = append(games, GameRes{
+// 			ID:      g.ID,
+// 			Deck:    g.Deck,
+// 			State:   g.State,
+// 			Players: playersArr(g.Players),
+// 		})
+// 	}
+// 	c.JSON(http.StatusOK, games)
+// }
 
-func (h *Handler) GetGame(c *gin.Context) {
-	gameID := c.Param("gameID")
+// For game info specifically
+// func (h *Handler) GetGame(c *gin.Context) {
+// 	roomID := c.Param("roomID")
 
-	if _, ok := h.hub.Games[gameID]; !ok {
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"Message": "Game does not exist"})
-		return
-	}
+// 	if _, ok := h.hub.Games[gameID]; !ok {
+// 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"Message": "Game does not exist"})
+// 		return
+// 	}
 
-	g := h.hub.Games[gameID]
-	c.JSON(http.StatusOK, GameRes{
-		ID:      g.ID,
-		Deck:    g.Deck,
-		State:   g.State,
-		Players: playersArr(g.Players),
-	})
-}
+// 	g := h.hub.Games[gameID]
+// 	c.JSON(http.StatusOK, GameRes{
+// 		ID:      g.ID,
+// 		Deck:    g.Deck,
+// 		State:   g.State,
+// 		Players: playersArr(g.Players),
+// 	})
+// }
 
 // LeaveRoom removes the player from the room
 func (h *Handler) LeaveRoom(c *gin.Context) {
@@ -222,16 +233,17 @@ func (h *Handler) LeaveRoom(c *gin.Context) {
 	}
 
 	r := h.hub.Rooms[roomID]
-	g := h.hub.Games[roomID]
+	player := r.Players[playerID]
+	player.Conn.Close()
+	close(player.Message)
 	delete(r.Players, playerID)
-	delete(g.Players, playerID)
 
 	if len(r.Players) == 0 {
 		delete(h.hub.Rooms, roomID)
 		c.JSON(http.StatusOK, gin.H{"Message": "Clear room"})
 	} else {
 		h.hub.Broadcast <- &Message{
-			GameID: roomID,
+			RoomID: roomID,
 			State:  PLAYER_LEFT,
 			Remark: "Player left!",
 		}
@@ -242,7 +254,7 @@ func (h *Handler) LeaveRoom(c *gin.Context) {
 
 func (h *Handler) GetPlayer(c *gin.Context) {
 	playerID := c.Param("playerID")
-	roomID := c.Param("roomID")
+	roomID := playerID[len(playerID)-4:]
 
 	if _, ok := h.hub.Rooms[roomID]; !ok {
 		c.JSON(http.StatusBadRequest, gin.H{"Message": "Room does not exist"})

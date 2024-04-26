@@ -4,133 +4,161 @@ import (
 	"fmt"
 	"log"
 	"slices"
+	"time"
 )
 
-func gameState(msgReq *MessageReq, hub *Hub, game *Game, p *Player) *Message {
-	players := game.Players
-	room := hub.Rooms[p.RoomID]
-	log.Printf("PLAYERS: %v", players)
-	var remark string
-	var state int
+func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
+
+	var msg *Message
 	switch msgReq.Action {
 
-	case READY:
-		p.Ready = true
-		remark = fmt.Sprintf("Player %v turns ready!", p.ID)
+	case LEAVE:
+		// player leaves room
+		msg = p.leaveRoom(room)
 
-		if checkReady(players) {
-			if game.State != INIT {
-				remark = "Start game!"
-				state = CHOOSE_CARD
-				game.State = CHOOSE_CARD
-				room.State = PLAY
-				for _, p := range players {
-					p.Ready = false
-				}
-				initGame(hub.Games[p.RoomID])
-			} else {
-				state = ALREADY
-			}
-		}
+	case READY:
+		// Player ready
+		msg = p.ready(room)
 
 	case START:
-		if checkReady(players) {
-			remark = "Start game!"
-			state = CHOOSE_CARD
-			game.State = CHOOSE_CARD
-			room.State = PLAY
-			for _, p := range players {
-				p.Ready = false
-			}
-			initGame(hub.Games[p.RoomID])
-		}
+		// Player presses start
+		msg = startGame(room)
 
 	case UNREADY:
-		remark = fmt.Sprintf("Player %v turns NOT ready!", p.ID)
-		state = UNREADY
-		p.Ready = false
+		// Player gets unready
+		msg = p.unready()
 
 	case PLAY:
 		// play cards
-		sel := msgReq.Card
-		remark = fmt.Sprintf("%v played card.", p.Name)
-		game.Select[p.ID] = sel
-		if len(game.Select) == len(players) {
-			for ID, sel := range game.Select {
-				game.Played[sel] = ID
-			}
-			// Remove played card from players' hands
-			removePlayed(game.Played, players, game)
-			sortedCards := getSortedCards(game.Played)
-			if isSmallest(sortedCards[0], game) {
-				game.State = CHOOSE_ROW
-				state = CHOOSE_ROW
-				remark = game.Played[sortedCards[0]]
-			} else {
-				game.State = CHOOSE_CARD
-				state = CHOOSE_CARD
-				// playCards
-				remark = "Played cards!"
-				playCards(game)
-				if len(p.Hand) == 0 {
-					// end game
-					state = endGame(game)
-				}
-			}
-
-		}
+		msg = room.play(msgReq, p, hub)
 		// room.Players = players
 
-	case UNPLAY:
-		delete(game.Played, msgReq.Card)
-		remark = fmt.Sprintf("Player %v recalled card!", p.ID)
-		// unplay cards
+	case PROCESS:
+		// reset timer
+		msg = room.processCards(p, hub)
 
 	case ROW:
-		sel := msgReq.Row
-		card := msgReq.Card
-		remark = fmt.Sprintf("%v selected row: %v!", p.ID, sel)
-		// EAT POINTS
-		row := game.Deck[sel]
-		p.Score += getScore(row)
-		game.Scores[p.ID] = p.Score
-		game.Deck[sel] = []int{card}
-		delete(game.Played, card)
-		game.State = CALCULATING
-		playCards(game)
-		if len(p.Hand) == 0 {
-			// end game
-			state = endGame(game)
-		} else {
-			state = CHOOSE_CARD
-		}
-		// updatePlayers(players)
+		msg = room.rows(msgReq.Row, msgReq.Card, p)
+		hub.Broadcast <- createMsg(room.ID, CHOOSE_CARD, deckTostring(room.Deck))
 
-	case LOBBY:
-		state = LOBBY
-		room.State = LOBBY
-		resetScore(game.Players)
-		remark = "Back to lobby!"
+	// case ROW:
+	// 	sel := msgReq.Row
+	// 	card := msgReq.Card
+	// 	remark = fmt.Sprintf("%v selected row: %v!", p.ID, sel)
+	// 	// EAT POINTS
+	// 	row := game.Deck[sel]
+	// 	p.Score += getScore(row)
+	// 	game.Scores[p.ID] = p.Score
+	// 	game.Deck[sel] = []int{card}
+	// 	delete(game.Played, card)
+	// 	game.State = CALCULATING
+	// 	playCards(game)
+	// 	if len(p.Hand) == 0 {
+	// 		// end game
+	// 		state = endGame(game)
+	// 	} else {
+	// 		state = CHOOSE_CARD
+	// 	}
+	// 	// updatePlayers(players)
+
+	// case LOBBY:
+	// 	state = LOBBY
+	// 	room.State = LOBBY
+	// 	resetScore(game.Players)
+	// 	remark = "Back to lobby!"
+
+	case COUNT:
+		// if room.Ticker == nil {
+		// 	room.Ticker = time.NewTicker(1 * time.Second)
+
+		// } else {
+		// 	room.Ticker.Stop()
+		// 	room.Ticker = time.NewTicker(1 * time.Second)
+		// 	go func(i int) {
+		// 		for ; true; <-room.Ticker.C {
+		// 			if i == 0 {
+		// 				gameState(&MessageReq{Action: PROCESS}, hub)
+		// 				return
+		// 			}
+		// 			log.Printf("Count: %v", i)
+		// 			i--
+		// 		}
+		// 	}(3)
+		// }
+
+	case STOPCOUNT:
+		// room.Ticker.Stop()
+
+	case CHAT:
+		msg = createMsg(room.ID, CHAT, "blabla")
+
+	case PING:
+		msg = createMsg(room.ID, PING, "Pong!")
+		// testConn(room)
 
 	}
+	// showhands(room)
 
-	msg := &Message{
-		// ID:     p.ID,
-		GameID: p.RoomID,
-		State:  state,
-		Remark: remark,
-	}
-	return msg
+	hub.Broadcast <- msg
 
 }
 
-func initGame(game *Game) {
+// PRE-GAME HANDLERS
+
+func (player *Player) leaveRoom(room *Room) *Message {
+	close(player.Message)
+	delete(room.Players, player.ID)
+	player.Conn.Close()
+	return createMsg(room.ID, PLAYER_LEFT, fmt.Sprintf("Player %v left the room!", player.Name))
+}
+
+func (player *Player) ready(room *Room) *Message {
+	player.Ready = true
+
+	if checkReady(room.Players) {
+		if room.State == INIT {
+
+			return createMsg(room.ID, ALREADY, "All ready to start!")
+			// Call init game
+		} else {
+			// Play next round
+		}
+	}
+
+	return createMsg(room.ID, READY, fmt.Sprintf("Player %v is ready!", player.Name))
+}
+
+func (player *Player) unready() *Message {
+	player.Ready = false
+	return &Message{
+		RoomID: player.RoomID,
+		State:  UNREADY,
+		Remark: fmt.Sprintf("Player %v turns NOT ready!", player.Name),
+	}
+}
+
+func startGame(room *Room) *Message {
+	if checkReady(room.Players) {
+		for _, p := range room.Players {
+			p.Ready = false
+		}
+		deck := room.initGame()
+		// Handle start game
+		return createMsg(room.ID, START, deck)
+
+	}
+	return createMsg(room.ID, INIT, "Not all players are ready!")
+
+}
+
+func (room *Room) initGame() string {
 	fullDeck := getFullDeck()
 	// Populate hands
 	// Populate deck
 	// Wait for ready
 	handLimit := 4
-	players := game.Players
+	players := room.Players
+	room.State = CHOOSE_CARD
 	if len(players) == 10 {
 		handLimit = 10
 	}
@@ -139,7 +167,7 @@ func initGame(game *Game) {
 		dealtHand := fullDeck[start : start+handLimit]
 		slices.Sort(dealtHand)
 		player.Hand = dealtHand
-		game.Hands[player.ID] = dealtHand
+		room.Hands[player.ID] = dealtHand
 		start += handLimit
 	}
 	var deck [][]int
@@ -147,39 +175,107 @@ func initGame(game *Game) {
 		row := []int{fullDeck[i]}
 		deck = append(deck, row)
 	}
-	game.Deck = deck
+	room.Deck = deck
+	return deckTostring(deck)
 }
 
-func playCards(game *Game) {
+// GAME HANDLERS
+
+func (room *Room) play(msgReq *MessageReq, p *Player, hub *Hub) *Message {
+	sel := msgReq.Card
+	// remark = fmt.Sprintf("%v played card.", p.Name)
+	room.Select[p.ID] = sel
+	if len(room.Select) == len(room.Players) {
+		// Start counting
+		if room.Ticker == nil {
+			room.Ticker = time.NewTicker(1 * time.Second)
+			go room.timer(room.ID, 5, PLAY, p, hub)
+		} else {
+			room.Ticker.Stop()
+			room.Ticker = time.NewTicker(1 * time.Second)
+			go room.timer(room.ID, 5, PLAY, p, hub)
+		}
+		return createMsg(room.ID, CALCULATING, "Processing...")
+	}
+
+	return createMsg(room.ID, CHOOSE_CARD, fmt.Sprintf("%v played card.", p.Name))
+}
+
+func (room *Room) processCards(p *Player, hub *Hub) *Message {
+	//reset ticker
+	room.Ticker = nil
+	for ID, sel := range room.Select {
+		room.Played[sel] = ID
+	}
+	// Remove played card from players' hands
+	removePlayed(room.Played, room.Players, room)
+	hub.Broadcast <- createMsg(room.ID, PROCESS, showPlayed(room))
+	sortedCards := getSortedCards(room.Played)
+	if isSmallest(sortedCards[0], room) {
+		room.State = CHOOSE_ROW
+		// Return
+		return createMsg(room.ID, CHOOSE_ROW, "Choose Row!")
+	} else {
+		// Play cards
+		// game.State = CHOOSE_CARD
+		// state = CHOOSE_CARD
+		// playCards
+		// remark = "Played cards!"
+		room.playCards()
+		if len(p.Hand) == 0 {
+			// end game
+			return createMsg(room.ID, endGame(room), "ENDED!")
+		}
+	}
+	return createMsg(room.ID, CHOOSE_CARD, deckTostring(room.Deck))
+}
+
+func (room *Room) rows(sel int, card int, p *Player) *Message {
+	log.Println("Doing row stuff!")
+
+	// 	remark = fmt.Sprintf("%v selected row: %v!", p.ID, sel)
+	// 	// EAT POINTS
+	row := room.Deck[sel]
+	p.Score += getScore(row)
+	room.Scores[p.ID] = p.Score
+	room.Deck[sel] = []int{card}
+	delete(room.Played, card)
+	room.State = CALCULATING
+	room.playCards()
+	if len(p.Hand) == 0 {
+		// end game
+		return createMsg(room.ID, endGame(room), "ENDED!")
+	}
+	return createMsg(room.ID, CHOOSE_ROW, fmt.Sprintf("%v selected row: %v!", p.Name, sel))
+	// 	// updatePlayers(players)
+}
+
+func (room *Room) playCards() {
 	//Check for nearest
-	players := game.Players
-	playedCard := game.Played
-	sortedCards := getSortedCards(playedCard)
-	deck := game.Deck
+	players := room.Players
+	deck := room.Deck
 	// Calculation
-	for _, card := range sortedCards {
+	for _, card := range getSortedCards(room.Played) {
 		nearestPos := getNearest(card, deck)
 		if len(deck[nearestPos]) == 5 {
 			// BUSTED
-			players[playedCard[card]].Score += getScore(deck[nearestPos])
+			players[room.Played[card]].Score += getScore(deck[nearestPos])
 			deck[nearestPos] = []int{}
 		}
 		deck[nearestPos] = append(deck[nearestPos], card)
 	}
-	game.Played = make(map[int]string)
-	game.Select = make(map[string]int)
-
-	game.State = CHOOSE_CARD
+	room.Played = make(map[int]string)
+	room.Select = make(map[string]int)
 
 }
 
-func endGame(game *Game) int {
+func endGame(room *Room) int {
 	// Check if any player crosse 66 points
 	// -> If no, init new round
 	// -> If yes, go back to lobby
 
 	var exceed bool
-	for _, p := range game.Players {
+	for _, p := range room.Players {
 		if p.Score >= 5 {
 			exceed = true
 			break
@@ -188,13 +284,27 @@ func endGame(game *Game) int {
 
 	if exceed {
 		// WE GOT A WINNER!
-		game.State = INIT
+		room.State = INIT
 		return GAME_END
 		// go back to lobby
 	} else {
-		game.State = ROUND_END
+		room.State = ROUND_END
 		// start new round
 		return ROUND_END
 	}
 
+}
+
+// TESTER HANDLERS
+func showhands(room *Room) {
+	for _, p := range room.Players {
+		p.Message <- createMsg(room.ID, 100, arrIntToString(p.Hand))
+	}
+}
+
+func testConn(room *Room) {
+	log.Println("CONNECTION STATUS:")
+	for _, p := range room.Players {
+		log.Println(p.Conn)
+	}
 }

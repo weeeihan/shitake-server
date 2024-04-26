@@ -16,13 +16,13 @@ func InitRouter(wsHandler *ws.Handler) {
 	// r.POST("/signup", wsHandler.CreateUser)
 	// r.POST("/newRoom", wsHandler.CreateRoom)
 	r.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{"http://localhost:3000"},
+		AllowOrigins:     []string{"http://localhost:5173"},
 		AllowMethods:     []string{"GET", "POST"},
 		AllowHeaders:     []string{"Content-Type"},
 		ExposeHeaders:    []string{"Content-Length"},
 		AllowCredentials: true,
 		AllowOriginFunc: func(origin string) bool {
-			return origin == "http://localhost:3000"
+			return origin == "http://localhost:5173"
 		},
 		MaxAge: 12 * time.Hour,
 	}))
@@ -30,11 +30,14 @@ func InitRouter(wsHandler *ws.Handler) {
 	r.GET("/ws/createRoom", wsHandler.CreateRoom)
 	r.GET("/ws/joinRoom/:roomID", wsHandler.JoinRoom)
 	r.GET("/ws/leaveRoom/:playerID", wsHandler.LeaveRoom)
-	r.GET("/ws/connectToGame/:gameID", wsHandler.ConnectToGame)
-	r.GET("/ws/getPlayer/:playerID/:roomID", wsHandler.GetPlayer)
+	r.GET("/ws/checkPlayer/:playerID", wsHandler.CheckPlayer)
+	r.GET("/ws/connectToGame/:playerID", wsHandler.ConnectToGame)
+	r.GET("/ws/getPlayer/:playerID", wsHandler.GetPlayer)
 
-	r.GET("/ws/getGames", wsHandler.GetGames)
-	r.GET("/ws/getGame/:gameID", wsHandler.GetGame)
+	r.GET("/getStates", wsHandler.GetStates)
+
+	// r.GET("/ws/getGames", wsHandler.GetGames)
+	// r.GET("/ws/getGame/:roomID", wsHandler.GetGame)
 	r.GET("/ws/getRooms", wsHandler.GetRooms)
 	r.GET("/ws/getRoom/:roomID", wsHandler.GetRoom)
 	// r.GET("/ws/getRooms", wsHandler.GetRooms)

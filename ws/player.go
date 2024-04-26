@@ -3,8 +3,6 @@ package ws
 import (
 	"encoding/json"
 	"log"
-
-	"github.com/gorilla/websocket"
 )
 
 // Write Message
@@ -32,22 +30,20 @@ func (p *Player) readMessages(hub *Hub) {
 	for {
 		_, m, err := p.Conn.ReadMessage()
 		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
-			}
+			log.Printf("error: %v", err)
+
 			break
 		}
 		var msgReq *MessageReq
 		if err := json.Unmarshal(m, &msgReq); err != nil {
 			log.Printf("error: %v", err)
 		}
-		game := hub.Games[p.RoomID]
+		room := hub.Rooms[p.RoomID]
 		log.Print(p.RoomID)
-		log.Print(game)
+		log.Print(room)
 
-		msg := gameState(msgReq, hub, game, p)
+		room.gameState(msgReq, p, hub)
 
-		hub.Broadcast <- msg
 	}
 }
 

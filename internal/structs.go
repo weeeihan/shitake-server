@@ -1,11 +1,14 @@
 package internal
 
+import "time"
+
 type Room struct {
 	ID      int64    `json:"id" db:"id"`
 	Players []string `json:"players" db:"players"`
 	Code    int      `json:"code" db:"code"`
 	Deck    []string `json:"deck" db:"deck"`
 	Scores  []int    `json:"scores" db:"scores"`
+	timer   *time.Ticker
 }
 
 type CreateRoomReq struct {

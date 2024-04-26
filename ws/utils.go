@@ -96,7 +96,7 @@ func getFullDeck() []int {
 	return deck
 }
 
-func isSmallest(smallest int, room *Game) bool {
+func isSmallest(smallest int, room *Room) bool {
 	for _, row := range room.Deck {
 		if smallest > row[len(row)-1] {
 			return false
@@ -105,7 +105,7 @@ func isSmallest(smallest int, room *Game) bool {
 	return true
 }
 
-func removePlayed(played map[int]string, players map[string]*Player, room *Game) {
+func removePlayed(played map[int]string, players map[string]*Player, room *Room) {
 	for card, id := range played {
 		p := players[id]
 		var newHand []int
@@ -121,11 +121,29 @@ func removePlayed(played map[int]string, players map[string]*Player, room *Game)
 
 func getSortedCards(played map[int]string) []int {
 	var cards []int
+	smallest := -1
+	sorted := true
 	for card := range played {
+		if card < smallest && sorted {
+			sorted = false
+		}
+		smallest = card
 		cards = append(cards, card)
 	}
-	slices.Sort(cards)
+	if !sorted {
+		slices.Sort(cards)
+	}
 	return cards
+}
+
+func showPlayed(room *Room) string {
+	sorted := getSortedCards(room.Played)
+	var out string
+	for _, card := range sorted {
+		out += fmt.Sprintf("%v Played %v | ", room.Players[room.Played[card]].Name, card)
+
+	}
+	return out
 }
 
 func getNearest(card int, deck [][]int) int {
@@ -205,4 +223,29 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		return true
 	},
+}
+
+func (room *Room) timer(roomID string, i int, state int, p *Player, hub *Hub) {
+	ticker := room.Ticker
+	for ; true; <-ticker.C {
+		if i == 0 {
+			if state == PLAY {
+				log.Println("PLAY!")
+
+				hub.Broadcast <- createMsg(roomID, COUNT, strconv.Itoa(i))
+				// room.gameState(&MessageReq{Action: PROCESS}, p, hub)
+			}
+			return
+		}
+		hub.Broadcast <- createMsg(roomID, COUNT, strconv.Itoa(i))
+		i--
+	}
+}
+
+func createMsg(roomID string, state int, remark string) *Message {
+	return &Message{
+		RoomID: roomID,
+		State:  state,
+		Remark: remark,
+	}
 }
