@@ -140,7 +140,7 @@ func showPlayed(room *Room) string {
 	sorted := getSortedCards(room.Played)
 	var out string
 	for _, card := range sorted {
-		out += fmt.Sprintf("%v Played %v | ", room.Players[room.Played[card]].Name, card)
+		out += fmt.Sprintf("%v:%v ", room.Players[room.Played[card]].Name, card)
 
 	}
 	return out
@@ -233,7 +233,7 @@ func (room *Room) timer(roomID string, i int, state int, p *Player, hub *Hub) {
 				log.Println("PLAY!")
 
 				hub.Broadcast <- createMsg(roomID, COUNT, strconv.Itoa(i))
-				// room.gameState(&MessageReq{Action: PROCESS}, p, hub)
+				room.gameState(&MessageReq{Action: PROCESS}, p, hub)
 			}
 			return
 		}

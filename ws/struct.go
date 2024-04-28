@@ -61,8 +61,9 @@ var (
 	RESET       int = 18
 	PING        int = 19
 
-	CHAT    int = 20
-	GETCARD int = 100
+	CHAT         int = 20
+	DISCONNECTED int = 21
+	GETCARD      int = 100
 )
 
 type Player struct {

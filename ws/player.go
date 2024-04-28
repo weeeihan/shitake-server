@@ -13,7 +13,12 @@ func (p *Player) writeMessages() {
 
 	for {
 		msg, ok := <-p.Message
+		if msg.State == DISCONNECTED {
+			log.Println("DISCONNECTED!")
+			return
+		}
 		if !ok {
+			log.Println("CLOSED GOROUTINE!")
 			return
 		}
 		p.Conn.WriteJSON(msg)

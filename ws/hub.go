@@ -25,6 +25,7 @@ func (h *Hub) Run() {
 
 		case player := <-h.Unregister:
 			player.Ready = false
+			player.Message <- createMsg(player.RoomID, DISCONNECTED, "Someone Disconnected")
 			log.Printf("Player %v disconnected!", player.Name)
 
 		case m := <-h.Broadcast:

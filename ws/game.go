@@ -3,6 +3,7 @@ package ws
 import (
 	"fmt"
 	"log"
+	"runtime"
 	"slices"
 	"time"
 )
@@ -35,6 +36,7 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 
 	case PROCESS:
 		// reset timer
+		// msg = createMsg(room.ID, PROCESS, "START PROCESSING CARDS")
 		msg = room.processCards(p, hub)
 
 	case ROW:
@@ -93,7 +95,7 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 		msg = createMsg(room.ID, CHAT, "blabla")
 
 	case PING:
-		msg = createMsg(room.ID, PING, "Pong!")
+		msg = createMsg(room.ID, PING, fmt.Sprintf("Number of goroutines: %v", runtime.NumGoroutine()))
 		// testConn(room)
 
 	}
@@ -144,7 +146,7 @@ func startGame(room *Room) *Message {
 		}
 		deck := room.initGame()
 		// Handle start game
-		return createMsg(room.ID, START, deck)
+		return createMsg(room.ID, CHOOSE_CARD, deck)
 
 	}
 	return createMsg(room.ID, INIT, "Not all players are ready!")

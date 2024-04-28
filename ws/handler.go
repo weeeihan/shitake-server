@@ -1,8 +1,10 @@
 package ws
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"runtime"
 
 	"github.com/gin-gonic/gin"
 )
@@ -111,12 +113,6 @@ func (h *Handler) JoinRoom(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"PlayerID": playerID})
 
-	// h.hub.Register <- player
-	// h.hub.Broadcast <- createMsg(roomID, NEW_PLAYER_JOINED, "Player joined!")
-	// player.Message <- createMsg(roomID, REGISTERED, playerID)
-
-	// go player.writeMessages()
-	// player.readMessages(h.hub)
 }
 
 func (h *Handler) CheckPlayer(c *gin.Context) {
@@ -276,4 +272,10 @@ func (h *Handler) GetPlayer(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, player)
+}
+
+func (h *Handler) Debug(c *gin.Context) {
+	fmt.Printf("Goroutines: %v ", runtime.NumGoroutine())
+	c.JSON(http.StatusOK, gin.H{"Message": "Debugging"})
+	return
 }
