@@ -57,8 +57,15 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 		Pause:   false,
 		Ready:   0,
 	}
+	playerRes := &PlayerRes{
+		ID:    player.ID,
+		Name:  player.Name,
+		Hand:  player.Hand,
+		Score: player.Score,
+		Ready: player.Ready,
+	}
 
-	c.JSON(http.StatusOK, gin.H{"roomID": id, "playerID": playerID})
+	c.JSON(http.StatusOK, playerRes)
 
 }
 
@@ -111,7 +118,15 @@ func (h *Handler) JoinRoom(c *gin.Context) {
 	// Register player into the room
 	r.Players[player.ID] = player
 
-	c.JSON(http.StatusOK, gin.H{"PlayerID": playerID})
+	playerRes := &PlayerRes{
+		ID:    player.ID,
+		Name:  player.Name,
+		Hand:  player.Hand,
+		Score: player.Score,
+		Ready: player.Ready,
+	}
+
+	c.JSON(http.StatusOK, playerRes)
 
 }
 
@@ -143,7 +158,7 @@ func (h *Handler) ConnectToGame(c *gin.Context) {
 	roomID := playerID[len(playerID)-4:]
 	player := h.hub.Rooms[roomID].Players[playerID]
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-	log.Println(err)
+	// log.Println(err)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -231,7 +246,6 @@ func (h *Handler) LeaveRoom(c *gin.Context) {
 	r := h.hub.Rooms[roomID]
 	player := r.Players[playerID]
 	player.Conn.Close()
-	close(player.Message)
 	delete(r.Players, playerID)
 
 	if len(r.Players) == 0 {

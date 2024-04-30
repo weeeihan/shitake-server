@@ -108,7 +108,7 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 // PRE-GAME HANDLERS
 
 func (player *Player) leaveRoom(room *Room) *Message {
-	close(player.Message)
+	// close(player.Message)
 	delete(room.Players, player.ID)
 	player.Conn.Close()
 	return createMsg(room.ID, PLAYER_LEFT, fmt.Sprintf("Player %v left the room!", player.Name))
@@ -177,7 +177,8 @@ func (room *Room) initGame() string {
 		row := []int{fullDeck[i]}
 		deck = append(deck, row)
 	}
-	room.Deck = deck
+	// TESTING
+	room.Deck = [][]int{{200}, {200}, {200}, {200}}
 	return deckTostring(deck)
 }
 
@@ -216,7 +217,7 @@ func (room *Room) processCards(p *Player, hub *Hub) *Message {
 	if isSmallest(sortedCards[0], room) {
 		room.State = CHOOSE_ROW
 		// Return
-		return createMsg(room.ID, CHOOSE_ROW, "Choose Row!")
+		return createMsg(room.ID, CHOOSE_ROW, room.Played[sortedCards[0]])
 	} else {
 		// Play cards
 		// game.State = CHOOSE_CARD
