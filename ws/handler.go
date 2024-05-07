@@ -25,8 +25,8 @@ func (h *Handler) GetStates(c *gin.Context) {
 func (h *Handler) CreateRoom(c *gin.Context) {
 
 	// Generate room code
-	// id := getRandID(h.hub.Rooms)
-	id := "1111"
+	id := getRandID(h.hub.Rooms)
+	// id := "1111"
 
 	playerID := getPlayerID(id)
 
@@ -56,6 +56,7 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 		Select:  make(map[string]int),
 		Pause:   false,
 		Ready:   0,
+		Chooser: "",
 	}
 	playerRes := &PlayerRes{
 		ID:    player.ID,
@@ -199,6 +200,8 @@ func (h *Handler) GetRoom(c *gin.Context) {
 		State:   r.State,
 		Deck:    r.Deck,
 		Players: playersArr(r.Players),
+		Played:  getPlayed(r),
+		Chooser: getChooser(r),
 	})
 }
 

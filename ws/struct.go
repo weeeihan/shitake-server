@@ -31,6 +31,7 @@ var gamestates = map[string]int{
 	"LOBBY":             LOBBY,
 	"PING":              PING,
 	"COUNT":             COUNT,
+	"ROW_SELECTED":      ROW_SELECTED,
 }
 
 var (
@@ -49,21 +50,23 @@ var (
 	ROW     int = 7
 
 	// enum for game state
-	INIT        int = 8
-	CHOOSE_CARD int = 9
-	CHOOSE_ROW  int = 10
-	CALCULATING int = 11
-	ROUND_END   int = 12
-	GAME_END    int = 13
-	LOBBY       int = 14
-	COUNT       int = 16
-	STOPCOUNT   int = 17
-	RESET       int = 18
-	PING        int = 19
+	INIT         int = 8
+	CHOOSE_CARD  int = 9
+	CHOOSE_ROW   int = 10
+	ROW_SELECTED int = 15
+	CALCULATING  int = 11
+	ROUND_END    int = 12
+	GAME_END     int = 13
+	LOBBY        int = 14
+	COUNT        int = 16
+	STOPCOUNT    int = 17
+	RESET        int = 18
+	PING         int = 19
 
 	CHAT         int = 20
 	DISCONNECTED int = 21
-	GETCARD      int = 100
+
+	GETCARD int = 100
 )
 
 type Player struct {
@@ -111,6 +114,10 @@ type Room struct {
 	// map[playerID]Hands
 	Hands map[string][]int `json:"hands"`
 	//map[playerID]Scores
+
+	//Row chooser
+	Chooser string `json:"chooser"`
+
 	Scores map[string]int `json:"scores"`
 	Pause  bool           `json:"pause"`
 	Ready  int            `json:"ready"`
@@ -122,6 +129,8 @@ type RoomRes struct {
 	State   int              `json:"state"`
 	Deck    [][]int          `json:"deck"`
 	Players []*PlayerDisplay `json:"players"`
+	Played  map[string]int   `json:"played"`
+	Chooser string           `json:"chooser"`
 }
 
 // type GameRes struct {

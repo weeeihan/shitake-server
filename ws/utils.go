@@ -147,9 +147,15 @@ func showPlayed(room *Room) string {
 }
 
 func getNearest(card int, deck [][]int) int {
+
+	log.Println(deck)
 	min := 1000
 	var pos int
 	for i, row := range deck {
+		if len(row) == 0 {
+			//bypass
+			return i
+		}
 		tail := row[len(row)-1]
 		if card < tail {
 			continue
@@ -198,6 +204,21 @@ func playersArr(players map[string]*Player) []*PlayerDisplay {
 		res = append(res, player)
 	}
 	return res
+}
+
+func getPlayed(r *Room) map[string]int {
+	played := make(map[string]int)
+	for p, id := range r.Played {
+		played[r.Players[id].Name] = p
+	}
+	return played
+}
+
+func getChooser(r *Room) string {
+	if r.Chooser == "" {
+		return ""
+	}
+	return r.Players[r.Chooser].Name
 }
 
 // func generateToken(id string) string {
