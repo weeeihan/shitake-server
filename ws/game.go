@@ -115,6 +115,7 @@ func (player *Player) leaveRoom(room *Room) *Message {
 }
 
 func (player *Player) ready(room *Room) *Message {
+	// log.Println("YO")
 	player.Ready = true
 
 	if checkReady(room.Players) {
@@ -123,6 +124,7 @@ func (player *Player) ready(room *Room) *Message {
 			return createMsg(room.ID, ALREADY, "All ready to start!")
 			// Call init game
 		} else {
+			startGame(room)
 			// Play next round
 		}
 	}
@@ -140,14 +142,20 @@ func (player *Player) unready() *Message {
 }
 
 func startGame(room *Room) *Message {
-	if checkReady(room.Players) {
-		for _, p := range room.Players {
-			p.Ready = false
-		}
-		deck := room.initGame()
-		// Handle start game
-		return createMsg(room.ID, CHOOSE_CARD, deck)
+	if room.State == INIT || room.State == ROUND_END || room.State == GAME_END {
+		if checkReady(room.Players) {
+			for _, p := range room.Players {
+				if room.State == GAME_END || room.State == INIT {
+					p.Score = 0
+				}
+				p.Ready = false
+			}
 
+			deck := room.initGame()
+			// Handle start game
+			return createMsg(room.ID, CHOOSE_CARD, deck)
+
+		}
 	}
 	return createMsg(room.ID, INIT, "Not all players are ready!")
 
@@ -158,7 +166,7 @@ func (room *Room) initGame() string {
 	// Populate hands
 	// Populate deck
 	// Wait for ready
-	handLimit := 4
+	handLimit := 2
 	players := room.Players
 	room.State = CHOOSE_CARD
 	if len(players) == 10 {
@@ -239,11 +247,11 @@ func (room *Room) processCards(p *Player, hub *Hub) *Message {
 
 func (room *Room) rows(sel int, card int, p *Player) *Message {
 	log.Println("Doing row stuff!")
-
+	room.Chooser = ""
 	// 	remark = fmt.Sprintf("%v selected row: %v!", p.ID, sel)
 	// 	// EAT POINTS
 	row := room.Deck[sel]
-	p.Score += getScore(row)
+	p.Score += getScore(row) * 50
 	room.Scores[p.ID] = p.Score
 	room.Deck[sel] = []int{}
 	room.State = CALCULATING
@@ -282,7 +290,7 @@ func endGame(room *Room) int {
 
 	var exceed bool
 	for _, p := range room.Players {
-		if p.Score >= 5 {
+		if p.Score >= 100 {
 			exceed = true
 			break
 		}
@@ -290,7 +298,7 @@ func endGame(room *Room) int {
 
 	if exceed {
 		// WE GOT A WINNER!
-		room.State = INIT
+		room.State = GAME_END
 		return GAME_END
 		// go back to lobby
 	} else {

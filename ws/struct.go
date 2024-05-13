@@ -35,36 +35,36 @@ var gamestates = map[string]int{
 }
 
 var (
-	NEW_PLAYER_JOINED int = 0
-	REGISTERED        int = 20
-	PLAYER_LEFT       int = 1
-	LEAVE             int = 1
+	NEW_PLAYER_JOINED int = 1
+	REGISTERED        int = 2
+	PLAYER_LEFT       int = 3
+	LEAVE             int = 4
 
 	// enum for player Message
-	READY   int = 2
-	UNREADY int = 3
-	ALREADY int = 15
-	START   int = 4
-	PLAY    int = 5
-	PROCESS int = 6
-	ROW     int = 7
+	READY   int = 5
+	UNREADY int = 6
+	ALREADY int = 7
+	START   int = 8
+	PLAY    int = 9
+	PROCESS int = 10
+	ROW     int = 11
 
 	// enum for game state
-	INIT         int = 8
-	CHOOSE_CARD  int = 9
-	CHOOSE_ROW   int = 10
+	INIT         int = 12
+	CHOOSE_CARD  int = 13
+	CHOOSE_ROW   int = 14
 	ROW_SELECTED int = 15
-	CALCULATING  int = 11
-	ROUND_END    int = 12
-	GAME_END     int = 13
-	LOBBY        int = 14
-	COUNT        int = 16
-	STOPCOUNT    int = 17
-	RESET        int = 18
-	PING         int = 19
+	CALCULATING  int = 16
+	ROUND_END    int = 17
+	GAME_END     int = 18
+	LOBBY        int = 19
+	COUNT        int = 20
+	STOPCOUNT    int = 21
+	RESET        int = 22
+	PING         int = 23
 
-	CHAT         int = 20
-	DISCONNECTED int = 21
+	CHAT         int = 23
+	DISCONNECTED int = 24
 
 	GETCARD int = 100
 )
