@@ -3,11 +3,15 @@ package ws
 import (
 	"encoding/json"
 	"log"
+	"runtime"
 )
 
 // Write Message
 func (p *Player) writeMessages() {
 	defer func() {
+		log.Printf("Goroutines: %v ", runtime.NumGoroutine())
+
+		log.Println("CLOSE WRITEMSG")
 		p.Conn.Close()
 	}()
 
@@ -18,9 +22,12 @@ func (p *Player) writeMessages() {
 			return
 		}
 		if !ok {
+			log.Println("NOT OK")
 			log.Println("CLOSED GOROUTINE!")
 			return
 		}
+		// log.Println("WRITING STUFF")
+		// log.Println(msg.Remark)
 		p.Conn.WriteJSON(msg)
 	}
 }
@@ -28,24 +35,29 @@ func (p *Player) writeMessages() {
 // Read Message
 func (p *Player) readMessages(hub *Hub) {
 	defer func() {
-		hub.Unregister <- p
+		// hub.Unregister <- p
 		p.Conn.Close()
+		log.Println("CLOSE READMESG")
 	}()
 
 	for {
 		_, m, err := p.Conn.ReadMessage()
 		if err != nil {
-			log.Printf("error: %v", err)
+			p.Message <- createMsg(p.RoomID, DISCONNECTED, "Someone Disconnected")
+			log.Println("ERROR1")
 
 			break
 		}
 		var msgReq *MessageReq
 		if err := json.Unmarshal(m, &msgReq); err != nil {
+			log.Println("ERROR2")
 			log.Printf("error: %v", err)
 		}
 		room := hub.Rooms[p.RoomID]
 		log.Print(p.RoomID)
 		log.Print(room)
+
+		log.Printf("READING MESSAGE: %v", msgReq.Action)
 
 		room.gameState(msgReq, p, hub)
 

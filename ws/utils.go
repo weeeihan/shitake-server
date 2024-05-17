@@ -108,6 +108,8 @@ func isSmallest(smallest int, room *Room) bool {
 func removePlayed(played map[int]string, players map[string]*Player, room *Room) {
 	for card, id := range played {
 		p := players[id]
+		// reset player ready flag
+		p.Ready = false
 		var newHand []int
 		for _, c := range p.Hand {
 			if c != card {
@@ -148,7 +150,6 @@ func showPlayed(room *Room) string {
 
 func getNearest(card int, deck [][]int) int {
 
-	log.Println(deck)
 	min := 1000
 	var pos int
 	for i, row := range deck {

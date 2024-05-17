@@ -294,5 +294,4 @@ func (h *Handler) GetPlayer(c *gin.Context) {
 func (h *Handler) Debug(c *gin.Context) {
 	fmt.Printf("Goroutines: %v ", runtime.NumGoroutine())
 	c.JSON(http.StatusOK, gin.H{"Message": "Debugging"})
-	return
 }

@@ -21,7 +21,7 @@ func (h *Hub) Run() {
 		case player := <-h.Register:
 			h.Broadcast <- createMsg(player.RoomID, REGISTERED, "Someone Registered")
 
-			// Check if everyone is connected
+		// Check if everyone is connected
 
 		case player := <-h.Unregister:
 			player.Ready = false

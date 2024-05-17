@@ -41,55 +41,10 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 
 	case ROW:
 		msg = room.rows(msgReq.Row, msgReq.Card, p)
-		// hub.Broadcast <- createMsg(room.ID, CHOOSE_CARD, deckTostring(room.Deck))
-
-	// case ROW:
-	// 	sel := msgReq.Row
-	// 	card := msgReq.Card
-	// 	remark = fmt.Sprintf("%v selected row: %v!", p.ID, sel)
-	// 	// EAT POINTS
-	// 	row := game.Deck[sel]
-	// 	p.Score += getScore(row)
-	// 	game.Scores[p.ID] = p.Score
-	// 	game.Deck[sel] = []int{card}
-	// 	delete(game.Played, card)
-	// 	game.State = CALCULATING
-	// 	playCards(game)
-	// 	if len(p.Hand) == 0 {
-	// 		// end game
-	// 		state = endGame(game)
-	// 	} else {
-	// 		state = CHOOSE_CARD
-	// 	}
-	// 	// updatePlayers(players)
-
-	// case LOBBY:
-	// 	state = LOBBY
-	// 	room.State = LOBBY
-	// 	resetScore(game.Players)
-	// 	remark = "Back to lobby!"
 
 	case COUNT:
-		// if room.Ticker == nil {
-		// 	room.Ticker = time.NewTicker(1 * time.Second)
-
-		// } else {
-		// 	room.Ticker.Stop()
-		// 	room.Ticker = time.NewTicker(1 * time.Second)
-		// 	go func(i int) {
-		// 		for ; true; <-room.Ticker.C {
-		// 			if i == 0 {
-		// 				gameState(&MessageReq{Action: PROCESS}, hub)
-		// 				return
-		// 			}
-		// 			log.Printf("Count: %v", i)
-		// 			i--
-		// 		}
-		// 	}(3)
-		// }
 
 	case STOPCOUNT:
-		// room.Ticker.Stop()
 
 	case CHAT:
 		msg = createMsg(room.ID, CHAT, "blabla")
@@ -123,7 +78,9 @@ func (player *Player) ready(room *Room) *Message {
 
 			return createMsg(room.ID, ALREADY, "All ready to start!")
 			// Call init game
-		} else {
+		}
+
+		if room.State == ROUND_END || room.State == GAME_END {
 			startGame(room)
 			// Play next round
 		}
@@ -153,7 +110,7 @@ func startGame(room *Room) *Message {
 
 			deck := room.initGame()
 			// Handle start game
-			return createMsg(room.ID, CHOOSE_CARD, deck)
+			return createMsg(room.ID, START, deck)
 
 		}
 	}
@@ -166,7 +123,7 @@ func (room *Room) initGame() string {
 	// Populate hands
 	// Populate deck
 	// Wait for ready
-	handLimit := 2
+	handLimit := 11
 	players := room.Players
 	room.State = CHOOSE_CARD
 	if len(players) == 10 {
@@ -186,7 +143,7 @@ func (room *Room) initGame() string {
 		deck = append(deck, row)
 	}
 	// TESTING
-	room.Deck = [][]int{{200}, {200}, {200}, {200}}
+	room.Deck = deck
 	return deckTostring(deck)
 }
 
@@ -196,15 +153,18 @@ func (room *Room) play(msgReq *MessageReq, p *Player, hub *Hub) *Message {
 	sel := msgReq.Card
 	// remark = fmt.Sprintf("%v played card.", p.Name)
 	room.Select[p.ID] = sel
+	p.Ready = true
 	if len(room.Select) == len(room.Players) {
+		// room.gameState(&MessageReq{Action: PROCESS}, p, hub)
+
 		// Start counting
 		if room.Ticker == nil {
 			room.Ticker = time.NewTicker(1 * time.Second)
-			go room.timer(room.ID, 2, PLAY, p, hub)
+			go room.timer(room.ID, 5, PLAY, p, hub)
 		} else {
 			room.Ticker.Stop()
 			room.Ticker = time.NewTicker(1 * time.Second)
-			go room.timer(room.ID, 2, PLAY, p, hub)
+			go room.timer(room.ID, 5, PLAY, p, hub)
 		}
 		return createMsg(room.ID, CALCULATING, "Processing...")
 	}
@@ -215,6 +175,7 @@ func (room *Room) play(msgReq *MessageReq, p *Player, hub *Hub) *Message {
 func (room *Room) processCards(p *Player, hub *Hub) *Message {
 	//reset ticker
 	room.Ticker = nil
+
 	// reset played cards
 	room.Played = make(map[int]string)
 	for ID, sel := range room.Select {
@@ -251,7 +212,7 @@ func (room *Room) rows(sel int, card int, p *Player) *Message {
 	// 	remark = fmt.Sprintf("%v selected row: %v!", p.ID, sel)
 	// 	// EAT POINTS
 	row := room.Deck[sel]
-	p.Score += getScore(row) * 50
+	p.Score += getScore(row)
 	room.Scores[p.ID] = p.Score
 	room.Deck[sel] = []int{}
 	room.State = CALCULATING
@@ -280,6 +241,7 @@ func (room *Room) playCards() {
 		deck[nearestPos] = append(deck[nearestPos], card)
 	}
 	room.Select = make(map[string]int)
+	room.State = CHOOSE_CARD
 
 }
 
