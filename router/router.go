@@ -35,6 +35,7 @@ func InitRouter(wsHandler *ws.Handler) {
 	r.GET("/ws/getPlayer/:playerID", wsHandler.GetPlayer)
 
 	r.GET("/getStates", wsHandler.GetStates)
+	r.GET("/getMushrooms", wsHandler.GetMushrooms)
 	r.GET("/debug", wsHandler.Debug)
 
 	// r.GET("/ws/getGames", wsHandler.GetGames)

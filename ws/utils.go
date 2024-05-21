@@ -75,12 +75,12 @@ func deckTostring(arr [][]int) string {
 	return fmt.Sprintf("Row 1: [%v] Row 2: [%v] Row 3: [%v] Row 4: [%v]", rows[0], rows[1], rows[2], rows[3])
 }
 
-func getScore(row []int) int {
-	var score int
-	for range row {
-		score++
+func damage(row []int) int {
+	var dmg int
+	for _, x := range row {
+		dmg += mushrooms[x].Damage
 	}
-	return score
+	return dmg
 }
 
 func getFullDeck() []int {
@@ -178,12 +178,6 @@ func getNearest(card int, deck [][]int) int {
 // 	}
 // }
 
-func resetScore(players map[string]*Player) {
-	for _, p := range players {
-		p.Score = 0
-	}
-}
-
 func isEither(state string, checker ...string) bool {
 	for _, x := range checker {
 		if state == x {
@@ -199,7 +193,7 @@ func playersArr(players map[string]*Player) []*PlayerDisplay {
 	for _, p := range players {
 		player := &PlayerDisplay{
 			Name:  p.Name,
-			Score: p.Score,
+			HP:    p.HP,
 			Ready: p.Ready,
 		}
 		res = append(res, player)

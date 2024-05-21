@@ -22,6 +22,10 @@ func (h *Handler) GetStates(c *gin.Context) {
 	c.JSON(http.StatusOK, gamestates)
 }
 
+func (h *Handler) GetMushrooms(c *gin.Context) {
+	c.JSON(http.StatusOK, GPTmushrooms)
+}
+
 func (h *Handler) CreateRoom(c *gin.Context) {
 
 	// Generate room code
@@ -34,9 +38,10 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 	player := &Player{
 		RoomID:  id,
 		ID:      playerID,
+		Play:    -1,
 		Name:    c.Query("name"),
 		Hand:    []int{},
-		Score:   0,
+		HP:      100,
 		Ready:   false,
 		Message: make(chan *Message, 10),
 	}
@@ -52,7 +57,7 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 		State:   INIT,
 		Played:  make(map[int]string),
 		Hands:   make(map[string][]int),
-		Scores:  make(map[string]int),
+		HPs:     make(map[string]int),
 		Select:  make(map[string]int),
 		Pause:   false,
 		Ready:   0,
@@ -61,8 +66,9 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 	playerRes := &PlayerRes{
 		ID:    player.ID,
 		Name:  player.Name,
+		Play:  player.Play,
 		Hand:  player.Hand,
-		Score: player.Score,
+		HP:    player.HP,
 		Ready: player.Ready,
 	}
 
@@ -111,7 +117,8 @@ func (h *Handler) JoinRoom(c *gin.Context) {
 		ID:      playerID,
 		Name:    name,
 		Hand:    []int{},
-		Score:   0,
+		Play:    -1,
+		HP:      100,
 		Ready:   false,
 		Message: make(chan *Message, 10),
 	}
@@ -123,7 +130,8 @@ func (h *Handler) JoinRoom(c *gin.Context) {
 		ID:    player.ID,
 		Name:  player.Name,
 		Hand:  player.Hand,
-		Score: player.Score,
+		Play:  player.Play,
+		HP:    player.HP,
 		Ready: player.Ready,
 	}
 
@@ -284,7 +292,8 @@ func (h *Handler) GetPlayer(c *gin.Context) {
 		ID:    playerID,
 		Name:  r.Players[playerID].Name,
 		Hand:  r.Players[playerID].Hand,
-		Score: r.Players[playerID].Score,
+		Play:  r.Players[playerID].Play,
+		HP:    r.Players[playerID].HP,
 		Ready: r.Players[playerID].Ready,
 	}
 

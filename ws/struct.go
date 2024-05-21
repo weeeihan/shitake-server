@@ -76,7 +76,7 @@ type Player struct {
 	RoomID  string `json:"roomId"`
 	Name    string `json:"name"`
 	Hand    []int  `json:"hand"`
-	Score   int    `json:"score"`
+	HP      int    `json:"hp"`
 	Play    int    `json:"play"`
 	Ready   bool   `json:"ready"`
 }
@@ -118,7 +118,7 @@ type Room struct {
 	//Row chooser
 	Chooser string `json:"chooser"`
 
-	Scores map[string]int `json:"scores"`
+	HPs    map[string]int `json:"hps"`
 	Pause  bool           `json:"pause"`
 	Ready  int            `json:"ready"`
 	Ticker *time.Ticker
@@ -181,8 +181,9 @@ type Handler struct {
 type PlayerRes struct {
 	ID    string `json:"id"`
 	Name  string `json:"name"`
+	Play  int    `json:"play"`
 	Hand  []int  `json:"hand"`
-	Score int    `json:"score"`
+	HP    int    `json:"hp"`
 	Ready bool   `json:"ready"`
 }
 
@@ -193,6 +194,76 @@ type MyJWTClaims struct {
 
 type PlayerDisplay struct {
 	Name  string `json:"name"`
-	Score int    `json:"score"`
+	HP    int    `json:"hp"`
 	Ready bool   `json:"ready"`
+}
+
+type Mushroom struct {
+	Name        string `json:"name"`
+	Damage      int    `json:"damage"`
+	Description string `json:"desc"`
+	Color       string `json:"color"`
+}
+
+var mushrooms = map[int]Mushroom{
+	1: {
+		Name:        "White button",
+		Damage:      2,
+		Description: "Agaricus bisporus, commonly known as the cultivated mushroom, is a basidiomycete mushroom native to grasslands in Eurasia and North America. It is cultivated in more than 70 countries and is one of the most commonly and widely consumed mushrooms in the world.",
+		Color:       "white",
+	},
+	2: {
+		Name:        "Enoki",
+		Damage:      2,
+		Description: "Flammulina filiformis is a species of edible agaric in the family Physalacriaceae. It is widely cultivated in East Asia, and well known for its role in Japanese and Chinese cuisine.",
+		Color:       "white",
+	},
+	3: {
+		Name:        "Morel",
+		Damage:      2,
+		Description: "Morchella, the true morels, is a genus of edible sac fungi closely related to anatomically simpler cup fungi in the order Pezizales. These distinctive fungi have a honeycomb appearance due to the network of ridges with pits composing their caps.",
+		Color:       "black",
+	},
+	4: {
+		Name:        "Shiitake",
+		Damage:      2,
+		Description: "Lentinula edodes is a species of edible mushroom native to East Asia, which is cultivated and consumed in many Asian countries. It is considered a medicinal mushroom in some forms of traditional medicine.",
+		Color:       "brown",
+	},
+	5: {
+		Name:        "Oyster",
+		Damage:      2,
+		Description: "Pleurotus ostreatus, the oyster mushroom, is a common edible mushroom. It was first cultivated in Germany as a subsistence measure during World War I and is now grown commercially around the world for food.",
+		Color:       "white",
+	},
+	6: {
+		Name:        "Porcini",
+		Damage:      2,
+		Description: "Boletus edulis is a basidiomycete fungus, and the type species of the genus Boletus. Widely distributed in the Northern Hemisphere across Europe, Asia, and North America, it does not occur naturally in the Southern Hemisphere, although it has been introduced to southern Africa, Australia, and New Zealand.",
+		Color:       "brown",
+	},
+	7: {
+		Name:        "Chanterelle",
+		Damage:      2,
+		Description: "Cantharellus cibarius, commonly known as the chanterelle, golden chanterelle or girolle, is a fungus. It is probably the best known species of the genus Cantharellus, if not the entire family of Cantharellaceae.",
+		Color:       "yellow",
+	},
+	8: {
+		Name:        "Lion's Mane",
+		Damage:      2,
+		Description: "Hericium erinaceus is a species of tooth fungus in the family Hericiaceae. It is native to North America, Europe, and Asia. It can be mistaken for other species of Hericium, all popular edibles, which grow across the same range.",
+		Color:       "white",
+	},
+	9: {
+		Name:        "Reishi",
+		Damage:      2,
+		Description: "Ganoderma lucidum is a species of bracket fungus, and the type species of the genus Ganoderma. It lives on deadwood, especially dead trees, and is generally considered to be a saprotroph, rather than a parasite.",
+		Color:       "red",
+	},
+	10: {
+		Name:        "Maitake",
+		Damage:      2,
+		Description: "Grifola frondosa is a polypore mushroom that grows in clusters at the base of trees, particularly oaks. The mushroom is commonly known among English speakers as hen of the woods, ram's head, and sheep's head.",
+		Color:       "white",
+	},
 }
