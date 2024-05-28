@@ -5,6 +5,7 @@ import (
 	"log"
 	"runtime"
 	"slices"
+	"time"
 )
 
 func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
@@ -159,10 +160,10 @@ func (room *Room) play(msgReq *MessageReq, p *Player, hub *Hub) *Message {
 		// room.gameState(&MessageReq{Action: PROCESS}, p, hub)
 
 		// Start counting
-		// if room.Ticker == nil {
-		// 	room.Ticker = time.NewTicker(1 * time.Second)
-		// 	go room.timer(room.ID, 10, PLAY, p, hub)
-		// }
+		if room.Ticker == nil {
+			room.Ticker = time.NewTicker(1 * time.Second)
+			go room.timer(room.ID, 10, PLAY, p, hub)
+		}
 		return createMsg(room.ID, CALCULATING, "Processing...")
 	}
 
@@ -241,7 +242,7 @@ func (room *Room) playCards(hub *Hub) {
 		}
 
 		deck[nearestPos] = append(deck[nearestPos], card)
-		hub.Broadcast <- createMsg(room.ID, PLAY, "SNAPSHOT")
+		// hub.Broadcast <- createMsg(room.ID, PLAY, "SNAPSHOT")
 	}
 	room.Select = make(map[string]int)
 	room.State = CHOOSE_CARD
