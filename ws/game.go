@@ -39,6 +39,10 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 		// msg = createMsg(room.ID, PROCESS, "START PROCESSING CARDS")
 		msg = room.processCards(p, hub)
 
+	case NEXT_PLAY:
+		room.State = CHOOSE_CARD
+		msg = createMsg(room.ID, CHOOSE_CARD, "CHOOSE CARD")
+
 	case ROW:
 		msg = room.rows(msgReq.Row, msgReq.Card, p, hub)
 
@@ -162,7 +166,7 @@ func (room *Room) play(msgReq *MessageReq, p *Player, hub *Hub) *Message {
 		// Start counting
 		if room.Ticker == nil {
 			room.Ticker = time.NewTicker(1 * time.Second)
-			go room.timer(room.ID, 10, PLAY, p, hub)
+			go room.timer(room.ID, 3, PLAY, p, hub)
 		}
 		return createMsg(room.ID, CALCULATING, "Processing...")
 	}
@@ -174,6 +178,8 @@ func (room *Room) processCards(p *Player, hub *Hub) *Message {
 	//reset ticker
 	room.Ticker = nil
 
+	// reset moves
+	room.Moves = [][]string{}
 	// reset played cards
 	room.Played = make(map[int]string)
 	for ID, sel := range room.Select {
@@ -184,7 +190,7 @@ func (room *Room) processCards(p *Player, hub *Hub) *Message {
 	removePlayed(room.Played, room.Players, room)
 	// hub.Broadcast <- createMsg(room.ID, PROCESS, showPlayed(room))
 	sortedCards := getSortedCards(room.Played)
-	hub.Broadcast <- createMsg(room.ID, PROCESS, "PROCESSING CARD")
+	// hub.Broadcast <- createMsg(room.ID, PROCESS, "PROCESSING CARD")
 	if isSmallest(sortedCards[0], room) {
 		room.State = CHOOSE_ROW
 		room.Chooser = room.Played[sortedCards[0]]
@@ -202,12 +208,11 @@ func (room *Room) processCards(p *Player, hub *Hub) *Message {
 			return createMsg(room.ID, endGame(room), "ENDED!")
 		}
 	}
-	return createMsg(room.ID, CHOOSE_CARD, deckTostring(room.Deck))
+	return createMsg(room.ID, PROCESS, deckTostring(room.Deck))
 }
 
 func (room *Room) rows(sel int, card int, p *Player, hub *Hub) *Message {
 	if room.State == CHOOSE_ROW {
-		log.Println("Doing row stuff!")
 		room.Chooser = ""
 		// 	remark = fmt.Sprintf("%v selected row: %v!", p.ID, sel)
 		// 	// EAT POINTS
@@ -223,7 +228,7 @@ func (room *Room) rows(sel int, card int, p *Player, hub *Hub) *Message {
 		}
 
 	}
-	return createMsg(room.ID, ROW_SELECTED, fmt.Sprintf("%v selected row: %v!", p.Name, sel))
+	return createMsg(room.ID, PROCESS, fmt.Sprintf("%v selected row: %v!", p.Name, sel))
 	// 	// updatePlayers(players)
 }
 
@@ -231,10 +236,14 @@ func (room *Room) playCards(hub *Hub) {
 	//Check for nearest
 	players := room.Players
 	deck := room.Deck
+	var moves [][]string
+
 	// Calculation
 	for _, card := range getSortedCards(room.Played) {
 
 		nearestPos := getNearest(card, deck)
+		id := room.Played[card]
+		moves = append(moves, []string{room.Players[id].Name, str(card), str(nearestPos), str(len(deck[nearestPos]))})
 		if len(deck[nearestPos]) == 5 {
 			// BUSTED
 			players[room.Played[card]].HP += damage(deck[nearestPos])
@@ -244,7 +253,11 @@ func (room *Room) playCards(hub *Hub) {
 		deck[nearestPos] = append(deck[nearestPos], card)
 		// hub.Broadcast <- createMsg(room.ID, PLAY, "SNAPSHOT")
 	}
+
+	room.Moves = moves
+	// Reset selections
 	room.Select = make(map[string]int)
+
 	room.State = CHOOSE_CARD
 
 }

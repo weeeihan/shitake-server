@@ -32,6 +32,7 @@ var gamestates = map[string]int{
 	"PING":              PING,
 	"COUNT":             COUNT,
 	"ROW_SELECTED":      ROW_SELECTED,
+	"NEXT_PLAY":         NEXT_PLAY,
 }
 
 var (
@@ -53,6 +54,7 @@ var (
 	INIT         int = 12
 	CHOOSE_CARD  int = 13
 	CHOOSE_ROW   int = 14
+	NEXT_PLAY    int = 25
 	ROW_SELECTED int = 15
 	CALCULATING  int = 16
 	ROUND_END    int = 17
@@ -70,15 +72,16 @@ var (
 )
 
 type Player struct {
-	Conn    *websocket.Conn
-	Message chan *Message
-	ID      string `json:"id"`
-	RoomID  string `json:"roomId"`
-	Name    string `json:"name"`
-	Hand    []int  `json:"hand"`
-	HP      int    `json:"hp"`
-	Play    int    `json:"play"`
-	Ready   bool   `json:"ready"`
+	Conn         *websocket.Conn
+	Message      chan *Message
+	ID           string       `json:"id"`
+	RoomID       string       `json:"roomId"`
+	Name         string       `json:"name"`
+	Hand         []int        `json:"hand"`
+	HP           int          `json:"hp"`
+	Play         int          `json:"play"`
+	Ready        bool         `json:"ready"`
+	DamageReport DamageReport `json:"damageReport"`
 }
 
 // {"action": "", "card": num, "row": num}
@@ -87,6 +90,13 @@ type MessageReq struct {
 	Action int `json:"action"`
 	Card   int `json:"card"`
 	Row    int `json:"row"`
+}
+
+type DamageReport struct {
+	Mushrooms      []int `json:"mushrooms"`
+	Damage         int   `json:"damageTaken"`
+	RoundMushrooms []int `json:"roundMushrooms"`
+	RoundDamage    int   `json:"roundDamage"`
 }
 
 type Message struct {
@@ -118,9 +128,12 @@ type Room struct {
 	//Row chooser
 	Chooser string `json:"chooser"`
 
-	HPs    map[string]int `json:"hps"`
-	Pause  bool           `json:"pause"`
-	Ready  int            `json:"ready"`
+	HPs   map[string]int `json:"hps"`
+	Pause bool           `json:"pause"`
+	Ready int            `json:"ready"`
+
+	// For animation
+	Moves  [][]string `json:"moves"`
 	Ticker *time.Ticker
 }
 
@@ -131,6 +144,7 @@ type RoomRes struct {
 	Players []*PlayerDisplay `json:"players"`
 	Played  map[string]int   `json:"played"`
 	Chooser string           `json:"chooser"`
+	Moves   [][]string       `json:"moves"`
 }
 
 // type GameRes struct {
@@ -179,12 +193,13 @@ type Handler struct {
 // }
 
 type PlayerRes struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Play  int    `json:"play"`
-	Hand  []int  `json:"hand"`
-	HP    int    `json:"hp"`
-	Ready bool   `json:"ready"`
+	ID           string       `json:"id"`
+	Name         string       `json:"name"`
+	Play         int          `json:"play"`
+	Hand         []int        `json:"hand"`
+	HP           int          `json:"hp"`
+	Ready        bool         `json:"ready"`
+	DamageReport DamageReport `json:"damageReport"`
 }
 
 type MyJWTClaims struct {

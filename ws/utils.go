@@ -85,7 +85,7 @@ func damage(row []int) int {
 
 func getFullDeck() []int {
 	var deck []int
-	for i := 1; i <= 104; i++ {
+	for i := 1; i <= 100; i++ {
 		deck = append(deck, i)
 	}
 
@@ -264,4 +264,8 @@ func createMsg(roomID string, state int, remark string) *Message {
 		State:  state,
 		Remark: remark,
 	}
+}
+
+func str(n int) string {
+	return strconv.Itoa(n)
 }

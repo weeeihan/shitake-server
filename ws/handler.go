@@ -44,6 +44,12 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 		HP:      100,
 		Ready:   false,
 		Message: make(chan *Message, 10),
+		DamageReport: DamageReport{
+			Mushrooms:      []int{},
+			Damage:         0,
+			RoundMushrooms: []int{},
+			RoundDamage:    0,
+		},
 	}
 
 	players := make(map[string]*Player)
@@ -62,14 +68,16 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 		Pause:   false,
 		Ready:   0,
 		Chooser: "",
+		Moves:   [][]string{},
 	}
 	playerRes := &PlayerRes{
-		ID:    player.ID,
-		Name:  player.Name,
-		Play:  player.Play,
-		Hand:  player.Hand,
-		HP:    player.HP,
-		Ready: player.Ready,
+		ID:           player.ID,
+		Name:         player.Name,
+		Play:         player.Play,
+		Hand:         player.Hand,
+		HP:           player.HP,
+		Ready:        player.Ready,
+		DamageReport: player.DamageReport,
 	}
 
 	c.JSON(http.StatusOK, playerRes)
@@ -121,18 +129,25 @@ func (h *Handler) JoinRoom(c *gin.Context) {
 		HP:      100,
 		Ready:   false,
 		Message: make(chan *Message, 10),
+		DamageReport: DamageReport{
+			Mushrooms:      []int{},
+			Damage:         0,
+			RoundMushrooms: []int{},
+			RoundDamage:    0,
+		},
 	}
 
 	// Register player into the room
 	r.Players[player.ID] = player
 
 	playerRes := &PlayerRes{
-		ID:    player.ID,
-		Name:  player.Name,
-		Hand:  player.Hand,
-		Play:  player.Play,
-		HP:    player.HP,
-		Ready: player.Ready,
+		ID:           player.ID,
+		Name:         player.Name,
+		Hand:         player.Hand,
+		Play:         player.Play,
+		HP:           player.HP,
+		Ready:        player.Ready,
+		DamageReport: player.DamageReport,
 	}
 
 	c.JSON(http.StatusOK, playerRes)
@@ -210,6 +225,7 @@ func (h *Handler) GetRoom(c *gin.Context) {
 		Players: playersArr(r.Players),
 		Played:  getPlayed(r),
 		Chooser: getChooser(r),
+		Moves:   r.Moves,
 	})
 }
 
@@ -289,12 +305,13 @@ func (h *Handler) GetPlayer(c *gin.Context) {
 	}
 
 	player := &PlayerRes{
-		ID:    playerID,
-		Name:  r.Players[playerID].Name,
-		Hand:  r.Players[playerID].Hand,
-		Play:  r.Players[playerID].Play,
-		HP:    r.Players[playerID].HP,
-		Ready: r.Players[playerID].Ready,
+		ID:           playerID,
+		Name:         r.Players[playerID].Name,
+		Hand:         r.Players[playerID].Hand,
+		Play:         r.Players[playerID].Play,
+		HP:           r.Players[playerID].HP,
+		Ready:        r.Players[playerID].Ready,
+		DamageReport: r.Players[playerID].DamageReport,
 	}
 
 	c.JSON(http.StatusOK, player)
