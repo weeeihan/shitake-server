@@ -269,3 +269,34 @@ func createMsg(roomID string, state int, remark string) *Message {
 func str(n int) string {
 	return strconv.Itoa(n)
 }
+
+func getHighestDamage(row []int) int {
+	highest := 0
+	for _, x := range row {
+		if x > highest {
+			highest = x
+		}
+	}
+	return highest
+}
+
+func addMush(mush []int, add []int) []int {
+	if len(mush) == 0 {
+		mush = []int{add[0]}
+	}
+	add = add[1:]
+
+	for _, a := range add {
+		for i, m := range mush {
+			if a == m {
+				break
+			}
+			if mushrooms[a].Damage <= mushrooms[m].Damage {
+				mush = append(mush[:i], append([]int{a}, mush[i:]...)...)
+				break
+			}
+			mush = append(mush, a)
+		}
+	}
+	return mush
+}

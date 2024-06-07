@@ -74,14 +74,14 @@ var (
 type Player struct {
 	Conn         *websocket.Conn
 	Message      chan *Message
-	ID           string       `json:"id"`
-	RoomID       string       `json:"roomId"`
-	Name         string       `json:"name"`
-	Hand         []int        `json:"hand"`
-	HP           int          `json:"hp"`
-	Play         int          `json:"play"`
-	Ready        bool         `json:"ready"`
-	DamageReport DamageReport `json:"damageReport"`
+	ID           string        `json:"id"`
+	RoomID       string        `json:"roomId"`
+	Name         string        `json:"name"`
+	Hand         []int         `json:"hand"`
+	HP           int           `json:"hp"`
+	Play         int           `json:"play"`
+	Ready        bool          `json:"ready"`
+	DamageReport *DamageReport `json:"damageReport"`
 }
 
 // {"action": "", "card": num, "row": num}
@@ -220,7 +220,7 @@ type Mushroom struct {
 	Color       string `json:"color"`
 }
 
-var mushrooms = map[int]Mushroom{
+var testmushrooms = map[int]Mushroom{
 	1: {
 		Name:        "White button",
 		Damage:      2,

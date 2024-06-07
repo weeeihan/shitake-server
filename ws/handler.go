@@ -23,7 +23,7 @@ func (h *Handler) GetStates(c *gin.Context) {
 }
 
 func (h *Handler) GetMushrooms(c *gin.Context) {
-	c.JSON(http.StatusOK, GPTmushrooms)
+	c.JSON(http.StatusOK, mushrooms)
 }
 
 func (h *Handler) CreateRoom(c *gin.Context) {
@@ -44,7 +44,7 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 		HP:      100,
 		Ready:   false,
 		Message: make(chan *Message, 10),
-		DamageReport: DamageReport{
+		DamageReport: &DamageReport{
 			Mushrooms:      []int{},
 			Damage:         0,
 			RoundMushrooms: []int{},
@@ -77,7 +77,7 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 		Hand:         player.Hand,
 		HP:           player.HP,
 		Ready:        player.Ready,
-		DamageReport: player.DamageReport,
+		DamageReport: *player.DamageReport,
 	}
 
 	c.JSON(http.StatusOK, playerRes)
@@ -129,7 +129,7 @@ func (h *Handler) JoinRoom(c *gin.Context) {
 		HP:      100,
 		Ready:   false,
 		Message: make(chan *Message, 10),
-		DamageReport: DamageReport{
+		DamageReport: &DamageReport{
 			Mushrooms:      []int{},
 			Damage:         0,
 			RoundMushrooms: []int{},
@@ -147,7 +147,7 @@ func (h *Handler) JoinRoom(c *gin.Context) {
 		Play:         player.Play,
 		HP:           player.HP,
 		Ready:        player.Ready,
-		DamageReport: player.DamageReport,
+		DamageReport: *player.DamageReport,
 	}
 
 	c.JSON(http.StatusOK, playerRes)
@@ -311,7 +311,7 @@ func (h *Handler) GetPlayer(c *gin.Context) {
 		Play:         r.Players[playerID].Play,
 		HP:           r.Players[playerID].HP,
 		Ready:        r.Players[playerID].Ready,
-		DamageReport: r.Players[playerID].DamageReport,
+		DamageReport: *r.Players[playerID].DamageReport,
 	}
 
 	c.JSON(http.StatusOK, player)

@@ -1,6 +1,6 @@
 package ws
 
-var GPTmushrooms = map[int]Mushroom{
+var mushrooms = map[int]Mushroom{
 	1: {
 		Name:        "White button",
 		Damage:      2,

@@ -217,7 +217,7 @@ func (room *Room) rows(sel int, card int, p *Player, hub *Hub) *Message {
 		// 	remark = fmt.Sprintf("%v selected row: %v!", p.ID, sel)
 		// 	// EAT POINTS
 		row := room.Deck[sel]
-		p.HP -= damage(row)
+		p.eat(row)
 		room.HPs[p.ID] = p.HP
 		room.Deck[sel] = []int{}
 		room.State = CALCULATING
@@ -246,7 +246,7 @@ func (room *Room) playCards(hub *Hub) {
 		moves = append(moves, []string{room.Players[id].Name, str(card), str(nearestPos), str(len(deck[nearestPos]))})
 		if len(deck[nearestPos]) == 5 {
 			// BUSTED
-			players[room.Played[card]].HP += damage(deck[nearestPos])
+			players[room.Played[card]].eat(deck[nearestPos])
 			deck[nearestPos] = []int{}
 		}
 
@@ -262,8 +262,21 @@ func (room *Room) playCards(hub *Hub) {
 
 }
 
+func (player *Player) eat(row []int) {
+	// update damage report
+	damage := damage(row)
+	player.HP -= damage
+	dr := player.DamageReport
+	dr.Damage += damage
+	dr.RoundDamage += damage
+	dr.RoundMushrooms = addMush(dr.RoundMushrooms, row)
+	log.Printf("Original mushrooms: %v", dr.Mushrooms)
+	dr.Mushrooms = addMush(dr.Mushrooms, row)
+	log.Printf("New mushrooms: %v", dr.Mushrooms)
+}
+
 func endGame(room *Room) int {
-	// Check if any player crosse 66 points
+	// Check for casualties
 	// -> If no, init new round
 	// -> If yes, go back to lobby
 
@@ -282,6 +295,11 @@ func endGame(room *Room) int {
 		// go back to lobby
 	} else {
 		room.State = ROUND_END
+		for _, p := range room.Players {
+			p.Ready = false
+			p.DamageReport.RoundDamage = 0
+			p.DamageReport.RoundMushrooms = []int{}
+		}
 		// start new round
 		return ROUND_END
 	}
