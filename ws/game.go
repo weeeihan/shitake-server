@@ -46,6 +46,14 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 	case ROW:
 		msg = room.rows(msgReq.Row, msgReq.Card, p, hub)
 
+	case ROUND_END:
+		p.End = 1
+		msg = createMsg(room.ID, ROUND_END, "Player ended round!")
+
+	case GAME_END:
+		p.End = 2
+		msg = createMsg(room.ID, GAME_END, "Player ended game!")
+
 	case COUNT:
 
 	case STOPCOUNT:
@@ -67,6 +75,17 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 // PRE-GAME HANDLERS
 
 func (player *Player) leaveRoom(room *Room) *Message {
+	if room.State == GAME_END {
+		// cancel all ready
+		for _, p := range room.Players {
+			p.Ready = false
+			p.End = 0
+			p.DamageReport.Damage = 0
+			p.DamageReport.Mushrooms = []int{}
+		}
+		room.State = INIT
+		return createMsg(room.ID, LOBBY, "Back to lobby!")
+	}
 	// close(player.Message)
 	delete(room.Players, player.ID)
 	player.Conn.Close()
@@ -86,6 +105,7 @@ func (player *Player) ready(room *Room) *Message {
 
 		if room.State == ROUND_END || room.State == GAME_END {
 			startGame(room)
+			return createMsg(room.ID, START, "Start game")
 			// Play next round
 		}
 	}
@@ -109,6 +129,7 @@ func startGame(room *Room) *Message {
 				if room.State == GAME_END || room.State == INIT {
 					p.HP = 100
 				}
+				p.End = 0
 				p.Ready = false
 			}
 
@@ -127,7 +148,7 @@ func (room *Room) initGame() string {
 	// Populate hands
 	// Populate deck
 	// Wait for ready
-	handLimit := 11
+	handLimit := 3
 	players := room.Players
 	room.State = CHOOSE_CARD
 	if len(players) == 10 {
@@ -137,8 +158,8 @@ func (room *Room) initGame() string {
 	for _, player := range players {
 		dealtHand := fullDeck[start : start+handLimit]
 		slices.Sort(dealtHand)
-		// player.Hand = dealtHand
-		player.Hand = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+		player.Hand = dealtHand
+		// player.Hand = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 		room.Hands[player.ID] = dealtHand
 		start += handLimit
 	}
@@ -148,7 +169,8 @@ func (room *Room) initGame() string {
 		deck = append(deck, row)
 	}
 	// TESTING
-	room.Deck = deck
+	// room.Deck = deck
+	room.Deck = [][]int{{200}, {200}, {200}, {200}}
 	return deckTostring(deck)
 }
 

@@ -81,6 +81,7 @@ type Player struct {
 	HP           int           `json:"hp"`
 	Play         int           `json:"play"`
 	Ready        bool          `json:"ready"`
+	End          int           `json:"end"`
 	DamageReport *DamageReport `json:"damageReport"`
 }
 
@@ -199,7 +200,18 @@ type PlayerRes struct {
 	Hand         []int        `json:"hand"`
 	HP           int          `json:"hp"`
 	Ready        bool         `json:"ready"`
+	End          int          `json:"end"`
 	DamageReport DamageReport `json:"damageReport"`
+}
+
+type GameConstant struct {
+	States    map[string]int   `json:"states"`
+	Mushrooms map[int]Mushroom `json:"mushrooms"`
+}
+
+type GameData struct {
+	Room   RoomRes   `json:"room"`
+	Player PlayerRes `json:"player"`
 }
 
 type MyJWTClaims struct {

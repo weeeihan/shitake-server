@@ -625,4 +625,10 @@ var mushrooms = map[int]Mushroom{
 		Description: "Xerocomellus chrysenteron, known as the red-cracking bolete, is an edible mushroom with a reddish-brown cap that cracks to reveal a yellow flesh underneath. It is found in coniferous and deciduous forests.",
 		Color:       "Red",
 	},
+	200: {
+		Name:        "Golden Teacher",
+		Damage:      150,
+		Description: "Makes you wanna cry",
+		Color:       "Blue",
+	},
 }

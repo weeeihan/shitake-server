@@ -30,9 +30,11 @@ func InitRouter(wsHandler *ws.Handler) {
 	r.GET("/ws/createRoom", wsHandler.CreateRoom)
 	r.GET("/ws/joinRoom/:roomID", wsHandler.JoinRoom)
 	r.GET("/ws/leaveRoom/:playerID", wsHandler.LeaveRoom)
-	r.GET("/ws/checkPlayer/:playerID", wsHandler.CheckPlayer)
 	r.GET("/ws/connectToGame/:playerID", wsHandler.ConnectToGame)
 	r.GET("/ws/getPlayer/:playerID", wsHandler.GetPlayer)
+
+	r.GET("/getConstants", wsHandler.GetConstants)
+	r.GET("/getData/:playerID", wsHandler.GetData)
 
 	r.GET("/getStates", wsHandler.GetStates)
 	r.GET("/getMushrooms", wsHandler.GetMushrooms)
