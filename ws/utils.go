@@ -300,3 +300,16 @@ func addMush(mush []int, add []int) []int {
 	}
 	return mush
 }
+
+func (r *Room) CheckConn() {
+	// Check everyone's connection
+	for _, p := range r.Players {
+		if p.Conn != nil {
+			return
+		}
+	}
+
+	// If everyone is disconnected, start idle timer
+	// Once the timer is up, delete the room
+
+}

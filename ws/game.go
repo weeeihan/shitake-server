@@ -11,11 +11,15 @@ import (
 func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 
 	var msg *Message
+	log.Print(msgReq)
 	switch msgReq.Action {
 
 	case LEAVE:
 		// player leaves room
 		msg = p.leaveRoom(room)
+		if len(room.Players) == 0 {
+			delete(hub.Rooms, room.ID)
+		}
 
 	case READY:
 		// Player ready
@@ -42,6 +46,8 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 	case NEXT_PLAY:
 		room.State = CHOOSE_CARD
 		msg = createMsg(room.ID, CHOOSE_CARD, "CHOOSE CARD")
+		p.Message <- msg
+		return
 
 	case ROW:
 		msg = room.rows(msgReq.Row, msgReq.Card, p, hub)
@@ -67,7 +73,7 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 
 	}
 	// showhands(room)
-
+	log.Print(room)
 	hub.Broadcast <- msg
 
 }
@@ -89,10 +95,13 @@ func (player *Player) leaveRoom(room *Room) *Message {
 	// close(player.Message)
 	delete(room.Players, player.ID)
 	player.Conn.Close()
+	// Delete room if nobody in it
+
 	return createMsg(room.ID, PLAYER_LEFT, fmt.Sprintf("Player %v left the room!", player.Name))
 }
 
 func (player *Player) ready(room *Room) *Message {
+	log.Print("Get ready?")
 	// log.Println("YO")
 	player.Ready = true
 
@@ -132,6 +141,7 @@ func startGame(room *Room) *Message {
 				p.End = 0
 				p.Ready = false
 			}
+			room.State = CHOOSE_CARD
 
 			deck := room.initGame()
 			// Handle start game
@@ -148,9 +158,8 @@ func (room *Room) initGame() string {
 	// Populate hands
 	// Populate deck
 	// Wait for ready
-	handLimit := 3
+	handLimit := 10
 	players := room.Players
-	room.State = CHOOSE_CARD
 	if len(players) == 10 {
 		handLimit = 10
 	}
@@ -158,8 +167,8 @@ func (room *Room) initGame() string {
 	for _, player := range players {
 		dealtHand := fullDeck[start : start+handLimit]
 		slices.Sort(dealtHand)
-		player.Hand = dealtHand
-		// player.Hand = []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+		// player.Hand = dealtHand
+		player.Hand = []int{2, 3, 4, 5, 6, 7, 8, 9, 10}
 		room.Hands[player.ID] = dealtHand
 		start += handLimit
 	}
@@ -170,7 +179,7 @@ func (room *Room) initGame() string {
 	}
 	// TESTING
 	// room.Deck = deck
-	room.Deck = [][]int{{200}, {200}, {200}, {200}}
+	room.Deck = [][]int{{5, 6}, {2, 7}, {3, 8}, {4}}
 	return deckTostring(deck)
 }
 
@@ -199,6 +208,7 @@ func (room *Room) play(msgReq *MessageReq, p *Player, hub *Hub) *Message {
 func (room *Room) processCards(p *Player, hub *Hub) *Message {
 	//reset ticker
 	room.Ticker = nil
+	room.State = PROCESS
 
 	// reset moves
 	room.Moves = [][]string{}
@@ -280,7 +290,7 @@ func (room *Room) playCards(hub *Hub) {
 	// Reset selections
 	room.Select = make(map[string]int)
 
-	room.State = CHOOSE_CARD
+	// room.State = CHOOSE_CARD
 
 }
 

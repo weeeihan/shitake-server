@@ -1,7 +1,6 @@
 package ws
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 	"runtime"
@@ -189,9 +188,21 @@ func (h *Handler) JoinRoom(c *gin.Context) {
 // }
 
 func (h *Handler) ConnectToGame(c *gin.Context) {
+
+	log.Printf("CONNECTING TO GAME!")
 	playerID := c.Param("playerID")
 	roomID := playerID[len(playerID)-4:]
+	if _, ok := h.hub.Rooms[roomID]; !ok {
+		log.Printf("Room does not exist!")
+		c.JSON(http.StatusBadRequest, gin.H{"Message": "Room does not exist!"})
+		return
+	}
 	player := h.hub.Rooms[roomID].Players[playerID]
+
+	// Duplicate attempts to connect
+	// if player.Conn != nil {
+	// 	player.Conn.Close()
+	// }
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	// log.Println(err)
 	if err != nil {
@@ -199,6 +210,7 @@ func (h *Handler) ConnectToGame(c *gin.Context) {
 		return
 	}
 
+	player.Message = make(chan *Message, 10)
 	player.Ready = false
 	player.Conn = conn
 	h.hub.Register <- player
@@ -373,6 +385,12 @@ func (h *Handler) GetPlayer(c *gin.Context) {
 }
 
 func (h *Handler) Debug(c *gin.Context) {
-	fmt.Printf("Goroutines: %v ", runtime.NumGoroutine())
+	log.Print(runtime.NumGoroutine())
+	// log.Printf()
+	// for _, r := range h.hub.Rooms {
+	// 	for _, p := range r.Players {
+	// 		log.Print(p)
+	// 	}
+	// }
 	c.JSON(http.StatusOK, gin.H{"Message": "Debugging"})
 }

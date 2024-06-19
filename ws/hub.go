@@ -1,9 +1,5 @@
 package ws
 
-import (
-	"log"
-)
-
 func NewHub() *Hub {
 	return &Hub{
 		Rooms:      make(map[string]*Room),
@@ -19,14 +15,18 @@ func (h *Hub) Run() {
 		select {
 		// If join rooms
 		case player := <-h.Register:
-			h.Broadcast <- createMsg(player.RoomID, REGISTERED, "Someone Registered")
+			// log.Print("Connected")
+			h.Broadcast <- createMsg(player.RoomID, REGISTERED, player.Name)
 
 		// Check if everyone is connected
 
 		case player := <-h.Unregister:
 			player.Ready = false
-			player.Message <- createMsg(player.RoomID, DISCONNECTED, "Someone Disconnected")
-			log.Printf("Player %v disconnected!", player.Name)
+			// player.Conn = nil
+			// player.Message <- createMsg(player.RoomID, DISCONNECTED, "Someone Disconnected")
+			// log.Print("Player stuff disconnected!")
+			// log.Print(player)
+			// h.Rooms[player.RoomID].CheckConn()
 
 		case m := <-h.Broadcast:
 
