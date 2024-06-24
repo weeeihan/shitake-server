@@ -19,17 +19,12 @@ func NewHandler(h *Hub) *Handler {
 
 func (h *Handler) GetConstants(c *gin.Context) {
 	c.JSON(http.StatusOK, GameConstant{
-		States:    gamestates,
-		Mushrooms: mushrooms,
+		States: gamestates,
 	})
 }
 
 func (h *Handler) GetStates(c *gin.Context) {
 	c.JSON(http.StatusOK, gamestates)
-}
-
-func (h *Handler) GetMushrooms(c *gin.Context) {
-	c.JSON(http.StatusOK, mushrooms)
 }
 
 func (h *Handler) CreateRoom(c *gin.Context) {
@@ -40,55 +35,48 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 
 	playerID := getPlayerID(id)
 
+	player := newPlayer(playerID, c.Query("name"), id)
 	// Register player into the room
-	player := &Player{
-		RoomID:  id,
-		ID:      playerID,
-		Play:    -1,
-		Name:    c.Query("name"),
-		Hand:    []int{},
-		HP:      100,
-		Ready:   false,
-		Message: make(chan *Message, 10),
-		End:     0,
-		DamageReport: &DamageReport{
-			Mushrooms:      []int{},
-			Damage:         0,
-			RoundMushrooms: []int{},
-			RoundDamage:    0,
-		},
-	}
+	// player := &Player{
+	// 	RoomID:  id,
+	// 	ID:      playerID,
+	// 	Play:    -1,
+	// 	Name:    c.Query("name"),
+	// 	Hand:    []int{},
+	// 	HP:      100,
+	// 	Ready:   false,
+	// 	Message: make(chan *Message, 10),
+	// 	End:     0,
+	// 	DamageReport: &DamageReport{
+	// 		Mushrooms:      0,
+	// 		Damage:         0,
+	// 		RoundMushrooms: 0,
+	// 		RoundDamage:    0,
+	// 		MushroomTypes:  []int{},
+	// 	},
+	// }
 
 	players := make(map[string]*Player)
 	players[player.ID] = player
 
 	// Create room
 	h.hub.Rooms[id] = &Room{
-		ID:      id,
-		Deck:    [][]int{},
-		Players: players,
-		State:   INIT,
-		Played:  make(map[int]string),
-		Hands:   make(map[string][]int),
-		HPs:     make(map[string]int),
-		Select:  make(map[string]int),
-		Pause:   false,
-		Ready:   0,
-		Chooser: "",
-		Moves:   [][]string{},
-	}
-	playerRes := &PlayerRes{
-		ID:           player.ID,
-		Name:         player.Name,
-		Play:         player.Play,
-		Hand:         player.Hand,
-		HP:           player.HP,
-		Ready:        player.Ready,
-		End:          player.End,
-		DamageReport: *player.DamageReport,
+		ID:        id,
+		Deck:      [][]int{},
+		Players:   players,
+		State:     INIT,
+		Played:    make(map[int]string),
+		Hands:     make(map[string][]int),
+		HPs:       make(map[string]int),
+		Select:    make(map[string]int),
+		Pause:     false,
+		Ready:     0,
+		Chooser:   "",
+		Moves:     [][]string{},
+		Mushrooms: getMushrooms(),
 	}
 
-	c.JSON(http.StatusOK, playerRes)
+	c.JSON(http.StatusOK, newPlayerRes(player))
 
 }
 
@@ -128,39 +116,41 @@ func (h *Handler) JoinRoom(c *gin.Context) {
 	r := h.hub.Rooms[roomID]
 
 	// Create player
-	player := &Player{
-		RoomID:  roomID,
-		ID:      playerID,
-		Name:    name,
-		Hand:    []int{},
-		Play:    -1,
-		HP:      100,
-		Ready:   false,
-		End:     0,
-		Message: make(chan *Message, 10),
-		DamageReport: &DamageReport{
-			Mushrooms:      []int{},
-			Damage:         0,
-			RoundMushrooms: []int{},
-			RoundDamage:    0,
-		},
-	}
+	player := newPlayer(playerID, name, roomID)
+	// player := &Player{
+	// 	RoomID:  roomID,
+	// 	ID:      playerID,
+	// 	Name:    name,
+	// 	Hand:    []int{},
+	// 	Play:    -1,
+	// 	HP:      100,
+	// 	Ready:   false,
+	// 	End:     0,
+	// 	Message: make(chan *Message, 10),
+	// 	DamageReport: &DamageReport{
+	// 		Mushrooms:      0,
+	// 		Damage:         0,
+	// 		RoundMushrooms: 0,
+	// 		RoundDamage:    0,
+	// 		MushroomTypes:  []int{},
+	// 	},
+	// }
 
 	// Register player into the room
 	r.Players[player.ID] = player
 
-	playerRes := &PlayerRes{
-		ID:           player.ID,
-		Name:         player.Name,
-		Hand:         player.Hand,
-		Play:         player.Play,
-		HP:           player.HP,
-		Ready:        player.Ready,
-		End:          player.End,
-		DamageReport: *player.DamageReport,
-	}
+	// playerRes := &PlayerRes{
+	// 	ID:           player.ID,
+	// 	Name:         player.Name,
+	// 	Hand:         player.Hand,
+	// 	Play:         player.Play,
+	// 	HP:           player.HP,
+	// 	Ready:        player.Ready,
+	// 	End:          player.End,
+	// 	DamageReport: *player.DamageReport,
+	// }
 
-	c.JSON(http.StatusOK, playerRes)
+	c.JSON(http.StatusOK, newPlayerRes(player))
 
 }
 
@@ -211,7 +201,7 @@ func (h *Handler) ConnectToGame(c *gin.Context) {
 	}
 
 	player.Message = make(chan *Message, 10)
-	player.Ready = false
+	// player.Ready = false
 	player.Conn = conn
 	h.hub.Register <- player
 
@@ -340,13 +330,14 @@ func (h *Handler) GetData(c *gin.Context) {
 	}
 
 	room := RoomRes{
-		ID:      r.ID,
-		State:   r.State,
-		Deck:    r.Deck,
-		Players: playersArr(r.Players),
-		Played:  getPlayed(r),
-		Chooser: getChooser(r),
-		Moves:   r.Moves,
+		ID:        r.ID,
+		State:     r.State,
+		Deck:      r.Deck,
+		Players:   playersArr(r.Players),
+		Played:    getPlayed(r),
+		Chooser:   getChooser(r),
+		Moves:     r.Moves,
+		Mushrooms: r.Mushrooms,
 	}
 
 	c.JSON(http.StatusOK, GameData{

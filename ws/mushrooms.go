@@ -1,6 +1,6 @@
 package ws
 
-var mushrooms = map[int]Mushroom{
+var mushroomsLib = map[int]Mushroom{
 	1: {
 		Name:        "White button",
 		Damage:      2,

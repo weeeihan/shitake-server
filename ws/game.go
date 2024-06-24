@@ -73,7 +73,7 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 
 	}
 	// showhands(room)
-	log.Print(room)
+	// log.Print(room)
 	hub.Broadcast <- msg
 
 }
@@ -87,7 +87,7 @@ func (player *Player) leaveRoom(room *Room) *Message {
 			p.Ready = false
 			p.End = 0
 			p.DamageReport.Damage = 0
-			p.DamageReport.Mushrooms = []int{}
+			p.DamageReport.Mushrooms = 0
 		}
 		room.State = INIT
 		return createMsg(room.ID, LOBBY, "Back to lobby!")
@@ -135,6 +135,8 @@ func startGame(room *Room) *Message {
 	if room.State == INIT || room.State == ROUND_END || room.State == GAME_END {
 		if checkReady(room.Players) {
 			for _, p := range room.Players {
+				p.DamageReport.RoundDamage = 0
+				p.DamageReport.RoundMushrooms = 0
 				if room.State == GAME_END || room.State == INIT {
 					p.HP = 100
 				}
@@ -158,7 +160,7 @@ func (room *Room) initGame() string {
 	// Populate hands
 	// Populate deck
 	// Wait for ready
-	handLimit := 10
+	handLimit := 3
 	players := room.Players
 	if len(players) == 10 {
 		handLimit = 10
@@ -167,8 +169,8 @@ func (room *Room) initGame() string {
 	for _, player := range players {
 		dealtHand := fullDeck[start : start+handLimit]
 		slices.Sort(dealtHand)
-		// player.Hand = dealtHand
-		player.Hand = []int{2, 3, 4, 5, 6, 7, 8, 9, 10}
+		player.Hand = dealtHand
+		// player.Hand = []int{2, 3, 4, 5, 6, 7, 8, 9, 10}
 		room.Hands[player.ID] = dealtHand
 		start += handLimit
 	}
@@ -178,8 +180,8 @@ func (room *Room) initGame() string {
 		deck = append(deck, row)
 	}
 	// TESTING
-	// room.Deck = deck
-	room.Deck = [][]int{{5, 6}, {2, 7}, {3, 8}, {4}}
+	room.Deck = deck
+	// room.Deck = [][]int{{5, 6}, {2, 7}, {3, 8}, {4}}
 	return deckTostring(deck)
 }
 
@@ -249,7 +251,7 @@ func (room *Room) rows(sel int, card int, p *Player, hub *Hub) *Message {
 		// 	remark = fmt.Sprintf("%v selected row: %v!", p.ID, sel)
 		// 	// EAT POINTS
 		row := room.Deck[sel]
-		p.eat(row)
+		p.eat(row, room)
 		room.HPs[p.ID] = p.HP
 		room.Deck[sel] = []int{}
 		room.State = CALCULATING
@@ -278,7 +280,7 @@ func (room *Room) playCards(hub *Hub) {
 		moves = append(moves, []string{room.Players[id].Name, str(card), str(nearestPos), str(len(deck[nearestPos]))})
 		if len(deck[nearestPos]) == 5 {
 			// BUSTED
-			players[room.Played[card]].eat(deck[nearestPos])
+			players[room.Played[card]].eat(deck[nearestPos], room)
 			deck[nearestPos] = []int{}
 		}
 
@@ -294,17 +296,16 @@ func (room *Room) playCards(hub *Hub) {
 
 }
 
-func (player *Player) eat(row []int) {
+func (player *Player) eat(row []int, room *Room) {
 	// update damage report
-	damage := damage(row)
+	damage := damage(row, room.Mushrooms)
 	player.HP -= damage
 	dr := player.DamageReport
 	dr.Damage += damage
+	dr.Mushrooms++
+	dr.RoundMushrooms++
 	dr.RoundDamage += damage
-	dr.RoundMushrooms = addMush(dr.RoundMushrooms, row)
-	log.Printf("Original mushrooms: %v", dr.Mushrooms)
-	dr.Mushrooms = addMush(dr.Mushrooms, row)
-	log.Printf("New mushrooms: %v", dr.Mushrooms)
+	dr.MushroomTypes = addMush(dr.MushroomTypes, row, room.Mushrooms)
 }
 
 func endGame(room *Room) int {
@@ -327,11 +328,7 @@ func endGame(room *Room) int {
 		// go back to lobby
 	} else {
 		room.State = ROUND_END
-		for _, p := range room.Players {
-			p.Ready = false
-			p.DamageReport.RoundDamage = 0
-			p.DamageReport.RoundMushrooms = []int{}
-		}
+
 		// start new round
 		return ROUND_END
 	}

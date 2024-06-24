@@ -11,6 +11,41 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+func newPlayer(id string, name string, roomId string) *Player {
+	return &Player{
+		RoomID:  roomId,
+		ID:      id,
+		Name:    name,
+		Hand:    []int{},
+		Play:    -1,
+		HP:      100,
+		Ready:   false,
+		Message: make(chan *Message, 10),
+		End:     0,
+		DamageReport: &DamageReport{
+			Mushrooms:      0,
+			Damage:         0,
+			RoundMushrooms: 0,
+			RoundDamage:    0,
+			MushroomTypes:  []int{},
+		},
+	}
+}
+
+func newPlayerRes(player *Player) PlayerRes {
+	return PlayerRes{
+		ID:           player.ID,
+		Name:         player.Name,
+		Play:         player.Play,
+		Hand:         player.Hand,
+		HP:           player.HP,
+		Ready:        player.Ready,
+		End:          player.End,
+		DamageReport: *player.DamageReport,
+	}
+
+}
+
 func checkReady(players map[string]*Player) bool {
 	for _, p := range players {
 		if !p.Ready {
@@ -75,7 +110,7 @@ func deckTostring(arr [][]int) string {
 	return fmt.Sprintf("Row 1: [%v] Row 2: [%v] Row 3: [%v] Row 4: [%v]", rows[0], rows[1], rows[2], rows[3])
 }
 
-func damage(row []int) int {
+func damage(row []int, mushrooms map[int]Mushroom) int {
 	var dmg int
 	for _, x := range row {
 		dmg += mushrooms[x].Damage
@@ -280,7 +315,7 @@ func getHighestDamage(row []int) int {
 	return highest
 }
 
-func addMush(mush []int, add []int) []int {
+func addMush(mush []int, add []int, mushrooms map[int]Mushroom) []int {
 	if len(mush) == 0 {
 		mush = []int{add[0]}
 	}
@@ -288,7 +323,7 @@ func addMush(mush []int, add []int) []int {
 
 	for _, a := range add {
 		for i, m := range mush {
-			if a == m {
+			if mushrooms[a].Name == mushrooms[m].Name {
 				break
 			}
 			if mushrooms[a].Damage <= mushrooms[m].Damage {
@@ -312,4 +347,20 @@ func (r *Room) CheckConn() {
 	// If everyone is disconnected, start idle timer
 	// Once the timer is up, delete the room
 
+}
+
+func getMushrooms() map[int]Mushroom {
+	mush := make(map[int]Mushroom)
+	for i := 1; i <= 104; i++ {
+		mush[i] = mushroomsLib[4]
+	}
+
+	// Special mushroom. Will work on randomizing later
+
+	mush[11] = mushroomsLib[5]
+	mush[27] = mushroomsLib[8]
+	mush[39] = mushroomsLib[9]
+	mush[51] = mushroomsLib[2]
+
+	return mush
 }

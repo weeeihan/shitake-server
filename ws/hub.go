@@ -1,5 +1,7 @@
 package ws
 
+import "log"
+
 func NewHub() *Hub {
 	return &Hub{
 		Rooms:      make(map[string]*Room),
@@ -21,7 +23,14 @@ func (h *Hub) Run() {
 		// Check if everyone is connected
 
 		case player := <-h.Unregister:
-			player.Ready = false
+
+			if _, ok := h.Rooms[player.RoomID]; ok {
+				room := h.Rooms[player.RoomID]
+				if room.State != CHOOSE_CARD {
+					log.Printf("Falsify ready")
+					player.Ready = false
+				}
+			}
 			// player.Conn = nil
 			// player.Message <- createMsg(player.RoomID, DISCONNECTED, "Someone Disconnected")
 			// log.Print("Player stuff disconnected!")

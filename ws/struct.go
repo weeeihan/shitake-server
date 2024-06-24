@@ -94,9 +94,10 @@ type MessageReq struct {
 }
 
 type DamageReport struct {
-	Mushrooms      []int `json:"mushrooms"`
+	Mushrooms      int   `json:"mushrooms"`
 	Damage         int   `json:"damageTaken"`
-	RoundMushrooms []int `json:"roundMushrooms"`
+	RoundMushrooms int   `json:"roundMushrooms"`
+	MushroomTypes  []int `json:"mushroomTypes"`
 	RoundDamage    int   `json:"roundDamage"`
 }
 
@@ -117,6 +118,9 @@ type Room struct {
 	Deck    [][]int `json:"deck"`
 	Players map[string]*Player
 	State   int `json:"state"`
+
+	// Every game you get different types of shrooms.
+	Mushrooms map[int]Mushroom `json:"mushrooms"`
 
 	// map[card]Playedbywhom
 	Played map[int]string `json:"played"`
@@ -139,13 +143,14 @@ type Room struct {
 }
 
 type RoomRes struct {
-	ID      string           `json:"id"`
-	State   int              `json:"state"`
-	Deck    [][]int          `json:"deck"`
-	Players []*PlayerDisplay `json:"players"`
-	Played  map[string]int   `json:"played"`
-	Chooser string           `json:"chooser"`
-	Moves   [][]string       `json:"moves"`
+	ID        string           `json:"id"`
+	State     int              `json:"state"`
+	Deck      [][]int          `json:"deck"`
+	Mushrooms map[int]Mushroom `json:"mushrooms"`
+	Players   []*PlayerDisplay `json:"players"`
+	Played    map[string]int   `json:"played"`
+	Chooser   string           `json:"chooser"`
+	Moves     [][]string       `json:"moves"`
 }
 
 // type GameRes struct {
