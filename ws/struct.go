@@ -33,6 +33,7 @@ var gamestates = map[string]int{
 	"COUNT":             COUNT,
 	"ROW_SELECTED":      ROW_SELECTED,
 	"NEXT_PLAY":         NEXT_PLAY,
+	"RESTART":           RESTART,
 }
 
 var (
@@ -67,6 +68,8 @@ var (
 
 	CHAT         int = 23
 	DISCONNECTED int = 24
+
+	RESTART int = 26
 
 	GETCARD int = 100
 )

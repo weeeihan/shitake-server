@@ -16,6 +16,9 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 
 	case LEAVE:
 		// player leaves room
+		if room.State != INIT {
+			room.State = INIT
+		}
 		msg = p.leaveRoom(room)
 		if len(room.Players) == 0 {
 			delete(hub.Rooms, room.ID)
@@ -58,6 +61,7 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 
 	case GAME_END:
 		p.End = 2
+		// Generate new mushrooms
 		msg = createMsg(room.ID, GAME_END, "Player ended game!")
 
 	case COUNT:
@@ -90,6 +94,7 @@ func (player *Player) leaveRoom(room *Room) *Message {
 			p.DamageReport.Mushrooms = 0
 		}
 		room.State = INIT
+		room.Mushrooms = getMushrooms()
 		return createMsg(room.ID, LOBBY, "Back to lobby!")
 	}
 	// close(player.Message)
@@ -113,8 +118,7 @@ func (player *Player) ready(room *Room) *Message {
 		}
 
 		if room.State == ROUND_END || room.State == GAME_END {
-			startGame(room)
-			return createMsg(room.ID, START, "Start game")
+			return startGame(room)
 			// Play next round
 		}
 	}
@@ -133,25 +137,37 @@ func (player *Player) unready() *Message {
 
 func startGame(room *Room) *Message {
 	if room.State == INIT || room.State == ROUND_END || room.State == GAME_END {
-		if checkReady(room.Players) {
-			for _, p := range room.Players {
-				p.DamageReport.RoundDamage = 0
-				p.DamageReport.RoundMushrooms = 0
-				if room.State == GAME_END || room.State == INIT {
-					p.HP = 100
-				}
-				p.End = 0
-				p.Ready = false
+		restart := room.State == GAME_END
+		if room.State == INIT {
+			if !checkReady(room.Players) {
+				return createMsg(room.ID, INIT, "Not all players are ready!")
 			}
-			room.State = CHOOSE_CARD
-
-			deck := room.initGame()
-			// Handle start game
-			return createMsg(room.ID, START, deck)
-
 		}
+		for _, p := range room.Players {
+			p.DamageReport.RoundDamage = 0
+			p.DamageReport.RoundMushrooms = 0
+			if room.State == GAME_END || room.State == INIT {
+				p.HP = 100
+				p.DamageReport.Damage = 0
+				p.DamageReport.Mushrooms = 0
+				p.DamageReport.MushroomTypes = []int{}
+				// Re-get mushrooms
+				room.Mushrooms = getMushrooms()
+			}
+			p.End = 0
+			p.Ready = false
+		}
+		room.State = CHOOSE_CARD
+
+		deck := room.initGame()
+		// Handle start game
+		if restart {
+			return createMsg(room.ID, RESTART, deck)
+		}
+		return createMsg(room.ID, START, deck)
+
 	}
-	return createMsg(room.ID, INIT, "Not all players are ready!")
+	return createMsg(room.ID, INIT, "INVALID")
 
 }
 
@@ -160,7 +176,7 @@ func (room *Room) initGame() string {
 	// Populate hands
 	// Populate deck
 	// Wait for ready
-	handLimit := 3
+	handLimit := 10
 	players := room.Players
 	if len(players) == 10 {
 		handLimit = 10
@@ -199,7 +215,7 @@ func (room *Room) play(msgReq *MessageReq, p *Player, hub *Hub) *Message {
 		// Start counting
 		if room.Ticker == nil {
 			room.Ticker = time.NewTicker(1 * time.Second)
-			go room.timer(room.ID, 3, PLAY, p, hub)
+			go room.timer(room.ID, 5, PLAY, p, hub)
 		}
 		return createMsg(room.ID, CALCULATING, "Processing...")
 	}

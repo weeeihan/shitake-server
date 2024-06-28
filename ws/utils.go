@@ -113,7 +113,14 @@ func deckTostring(arr [][]int) string {
 func damage(row []int, mushrooms map[int]Mushroom) int {
 	var dmg int
 	for _, x := range row {
-		dmg += mushrooms[x].Damage
+
+		// Default all the undefined mushrooms to shiitake,
+		// Ignore invalid input first, will fix later.
+		mush, ok := mushrooms[x]
+		if !ok {
+			mush = mushrooms[0]
+		}
+		dmg += mush.Damage
 	}
 	return dmg
 }
@@ -323,10 +330,18 @@ func addMush(mush []int, add []int, mushrooms map[int]Mushroom) []int {
 
 	for _, a := range add {
 		for i, m := range mush {
-			if mushrooms[a].Name == mushrooms[m].Name {
+			mushA, okA := mushrooms[a]
+			mushM, okM := mushrooms[m]
+			if !okA {
+				mushA = mushrooms[0]
+			}
+			if !okM {
+				mushM = mushrooms[0]
+			}
+			if mushA.Name == mushM.Name {
 				break
 			}
-			if mushrooms[a].Damage <= mushrooms[m].Damage {
+			if mushA.Damage <= mushM.Damage {
 				mush = append(mush[:i], append([]int{a}, mush[i:]...)...)
 				break
 			}
@@ -351,9 +366,9 @@ func (r *Room) CheckConn() {
 
 func getMushrooms() map[int]Mushroom {
 	mush := make(map[int]Mushroom)
-	for i := 1; i <= 104; i++ {
-		mush[i] = mushroomsLib[4]
-	}
+
+	// Default to shiitake
+	mush[0] = mushroomsLib[4]
 
 	// Special mushroom. Will work on randomizing later
 
