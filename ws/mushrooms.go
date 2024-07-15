@@ -3,13 +3,13 @@ package ws
 var mushroomsLib = map[int]Mushroom{
 	1: {
 		Name:        "White button",
-		Damage:      2,
+		Damage:      4,
 		Description: "Agaricus bisporus, commonly known as the cultivated mushroom, is a basidiomycete mushroom native to grasslands in Eurasia and North America. It is cultivated in more than 70 countries and is one of the most commonly and widely consumed mushrooms in the world.",
 		Color:       "white",
 	},
 	2: {
 		Name:        "Enoki",
-		Damage:      2,
+		Damage:      10,
 		Description: "Flammulina filiformis is a species of edible agaric in the family Physalacriaceae. It is widely cultivated in East Asia, and well known for its role in Japanese and Chinese cuisine.",
 		Color:       "white",
 	},
@@ -27,7 +27,7 @@ var mushroomsLib = map[int]Mushroom{
 	},
 	5: {
 		Name:        "Oyster",
-		Damage:      2,
+		Damage:      3,
 		Description: "Pleurotus ostreatus, the oyster mushroom, is a common edible mushroom. It was first cultivated in Germany as a subsistence measure during World War I and is now grown commercially around the world for food.",
 		Color:       "white",
 	},
@@ -45,13 +45,13 @@ var mushroomsLib = map[int]Mushroom{
 	},
 	8: {
 		Name:        "Lion's Mane",
-		Damage:      2,
+		Damage:      3,
 		Description: "Hericium erinaceus is a species of tooth fungus in the family Hericiaceae. It is native to North America, Europe, and Asia. It can be mistaken for other species of Hericium, all popular edibles, which grow across the same range.",
 		Color:       "white",
 	},
 	9: {
 		Name:        "Reishi",
-		Damage:      2,
+		Damage:      10,
 		Description: "Ganoderma lucidum is a species of bracket fungus, and the type species of the genus Ganoderma. It lives on deadwood, especially dead trees, and is generally considered to be a saprotroph, rather than a parasite.",
 		Color:       "red",
 	},
@@ -628,7 +628,7 @@ var mushroomsLib = map[int]Mushroom{
 	200: {
 		Name:        "Golden Teacher",
 		Damage:      150,
-		Description: "Makes you wanna cry",
+		Description: "Teaches you the way of life",
 		Color:       "Blue",
 	},
 }

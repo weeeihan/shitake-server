@@ -176,7 +176,7 @@ func (room *Room) initGame() string {
 	// Populate hands
 	// Populate deck
 	// Wait for ready
-	handLimit := 10
+	handLimit := 11
 	players := room.Players
 	if len(players) == 10 {
 		handLimit = 10
