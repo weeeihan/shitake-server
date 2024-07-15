@@ -1,15 +1,16 @@
 FROM golang:1.21.4-alpine
 
-WORKDIR /app
+RUN mkdir /app
 ## We copy everything in the root directory
 ## into our /app directory
-COPY . . 
-
-RUN go mod download
-
-RUN go build -o /shitake-server
+ADD . /app
+## We specify that we now wish to execute 
+## any further commands inside our /app
+## directory
+WORKDIR /app
+## we run go build to compile the binary
+## executable of our Go program
+RUN go build -o main .
 ## Our start command which kicks off
-EXPOSE 8080
-
 ## our newly created binary executable
 CMD ["/shitake"]
