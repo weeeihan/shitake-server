@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -285,18 +286,39 @@ var upgrader = websocket.Upgrader{
 
 func (room *Room) timer(roomID string, i int, state int, p *Player, hub *Hub) {
 	ticker := room.Ticker
-	for ; true; <-ticker.C {
-		if i == 0 {
-			if state == PLAY {
-				log.Println("PLAY!")
+	if state == IDLE {
+		ticker = time.NewTicker(1 * time.Second)
+	}
+	for {
+		select {
+		case <-ticker.C:
+			if i == 0 {
+				if state == PLAY {
+					log.Println("PLAY!")
 
-				hub.Broadcast <- createMsg(roomID, COUNT, strconv.Itoa(i))
-				room.gameState(&MessageReq{Action: PROCESS}, p, hub)
+					hub.Broadcast <- createMsg(roomID, COUNT, strconv.Itoa(i))
+					room.gameState(&MessageReq{Action: PROCESS}, p, hub)
+				}
+
+				if state == IDLE {
+					delete(hub.Rooms, roomID)
+					log.Println("Room deleted")
+				}
+				return
 			}
-			return
+			if state == PLAY {
+				hub.Broadcast <- createMsg(roomID, COUNT, strconv.Itoa(i))
+			}
+			i--
+
+		case player := <-hub.Register:
+			if state == IDLE {
+				if player.RoomID == roomID {
+					return
+				}
+			}
 		}
-		hub.Broadcast <- createMsg(roomID, COUNT, strconv.Itoa(i))
-		i--
+
 	}
 }
 

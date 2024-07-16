@@ -69,6 +69,8 @@ var (
 	CHAT         int = 23
 	DISCONNECTED int = 24
 
+	IDLE int = 25
+
 	RESTART int = 26
 
 	GETCARD int = 100
@@ -120,6 +122,7 @@ type Room struct {
 	ID      string  `json:"id"`
 	Deck    [][]int `json:"deck"`
 	Players map[string]*Player
+	Online  int
 	State   int `json:"state"`
 
 	// Every game you get different types of shrooms.
@@ -154,6 +157,7 @@ type RoomRes struct {
 	Played    map[string]int   `json:"played"`
 	Chooser   string           `json:"chooser"`
 	Moves     [][]string       `json:"moves"`
+	Online    int              `json:"online"`
 }
 
 // type GameRes struct {
@@ -162,24 +166,6 @@ type RoomRes struct {
 // 	State   int              `json:"state"`
 // 	Players []*PlayerDisplay `json:"players"`
 // }
-
-type Game struct {
-	ID      string  `json:"id"`
-	Deck    [][]int `json:"deck"`
-	Players map[string]*Player
-	State   int `json:"state"`
-	// map[card]Playedbywhom
-	Played map[int]string `json:"played"`
-
-	Select map[string]int `json:"select"`
-
-	// map[playerID]Hands
-	Hands map[string][]int `json:"hands"`
-	//map[playerID]Scores
-	Scores map[string]int `json:"scores"`
-	Pause  bool           `json:"pause"`
-	Ready  int            `json:"ready"`
-}
 
 type Hub struct {
 	Rooms      map[string]*Room

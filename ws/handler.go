@@ -74,6 +74,7 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 		Chooser:   "",
 		Moves:     [][]string{},
 		Mushrooms: getMushrooms(),
+		Online:    0,
 	}
 
 	c.JSON(http.StatusOK, newPlayerRes(player))
@@ -217,6 +218,7 @@ func (h *Handler) GetRooms(c *gin.Context) {
 			ID:      r.ID,
 			State:   r.State,
 			Players: playersArr(r.Players),
+			Online:  r.Online,
 		})
 	}
 	c.JSON(http.StatusOK, rooms)

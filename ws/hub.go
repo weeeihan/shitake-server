@@ -1,6 +1,9 @@
 package ws
 
-import "log"
+import (
+	"log"
+	"time"
+)
 
 func NewHub() *Hub {
 	return &Hub{
@@ -18,7 +21,12 @@ func (h *Hub) Run() {
 		// If join rooms
 		case player := <-h.Register:
 			// log.Print("Connected")
-			h.Broadcast <- createMsg(player.RoomID, REGISTERED, player.Name)
+			if _, ok := h.Rooms[player.RoomID]; ok {
+				room := h.Rooms[player.RoomID]
+				room.Online = room.Online + 1
+			}
+
+			// h.Broadcast <- createMsg(player.RoomID, REGISTERED, player.Name)
 
 		// Check if everyone is connected
 
@@ -26,6 +34,13 @@ func (h *Hub) Run() {
 
 			if _, ok := h.Rooms[player.RoomID]; ok {
 				room := h.Rooms[player.RoomID]
+				room.Online = room.Online - 1
+
+				if room.Online == 0 {
+					// Start timer.
+					room.Ticker = time.NewTicker(1 * time.Second)
+					go room.timer(room.ID, 20, IDLE, player, h)
+				}
 				if room.State != CHOOSE_CARD {
 					log.Printf("Falsify ready")
 					player.Ready = false
