@@ -74,7 +74,7 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 		Chooser:   "",
 		Moves:     [][]string{},
 		Mushrooms: getMushrooms(),
-		Online:    0,
+		Online:    make(map[string]bool),
 	}
 
 	c.JSON(http.StatusOK, newPlayerRes(player))
@@ -180,7 +180,7 @@ func (h *Handler) JoinRoom(c *gin.Context) {
 
 func (h *Handler) ConnectToGame(c *gin.Context) {
 
-	log.Printf("CONNECTING TO GAME!")
+	// log.Printf("CONNECTING TO GAME!")
 	playerID := c.Param("playerID")
 	roomID := playerID[len(playerID)-4:]
 	if _, ok := h.hub.Rooms[roomID]; !ok {
@@ -188,6 +188,8 @@ func (h *Handler) ConnectToGame(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"Message": "Room does not exist!"})
 		return
 	}
+	room := h.hub.Rooms[roomID]
+	room.Online[playerID] = true
 	player := h.hub.Rooms[roomID].Players[playerID]
 
 	// Duplicate attempts to connect
@@ -201,10 +203,11 @@ func (h *Handler) ConnectToGame(c *gin.Context) {
 		return
 	}
 
+	log.Print("connecting...")
 	player.Message = make(chan *Message, 10)
 	// player.Ready = false
 	player.Conn = conn
-	h.hub.Register <- player
+	// h.hub.Register <- player
 
 	go player.writeMessages()
 	player.readMessages(h.hub)

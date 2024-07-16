@@ -122,7 +122,7 @@ type Room struct {
 	ID      string  `json:"id"`
 	Deck    [][]int `json:"deck"`
 	Players map[string]*Player
-	Online  int
+	Online  map[string]bool
 	State   int `json:"state"`
 
 	// Every game you get different types of shrooms.
@@ -146,6 +146,7 @@ type Room struct {
 	// For animation
 	Moves  [][]string `json:"moves"`
 	Ticker *time.Ticker
+	Idle   *time.Ticker
 }
 
 type RoomRes struct {
@@ -157,7 +158,7 @@ type RoomRes struct {
 	Played    map[string]int   `json:"played"`
 	Chooser   string           `json:"chooser"`
 	Moves     [][]string       `json:"moves"`
-	Online    int              `json:"online"`
+	Online    map[string]bool  `json:"online"`
 }
 
 // type GameRes struct {
@@ -168,10 +169,8 @@ type RoomRes struct {
 // }
 
 type Hub struct {
-	Rooms      map[string]*Room
-	Register   chan *Player
-	Unregister chan *Player
-	Broadcast  chan *Message
+	Rooms     map[string]*Room
+	Broadcast chan *Message
 }
 
 type Handler struct {

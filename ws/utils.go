@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -286,39 +285,18 @@ var upgrader = websocket.Upgrader{
 
 func (room *Room) timer(roomID string, i int, state int, p *Player, hub *Hub) {
 	ticker := room.Ticker
-	if state == IDLE {
-		ticker = time.NewTicker(1 * time.Second)
-	}
-	for {
-		select {
-		case <-ticker.C:
-			if i == 0 {
-				if state == PLAY {
-					log.Println("PLAY!")
-
-					hub.Broadcast <- createMsg(roomID, COUNT, strconv.Itoa(i))
-					room.gameState(&MessageReq{Action: PROCESS}, p, hub)
-				}
-
-				if state == IDLE {
-					delete(hub.Rooms, roomID)
-					log.Println("Room deleted")
-				}
-				return
-			}
+	for ; true; <-ticker.C {
+		if i == 0 {
 			if state == PLAY {
+				log.Println("PLAY!")
+
 				hub.Broadcast <- createMsg(roomID, COUNT, strconv.Itoa(i))
+				room.gameState(&MessageReq{Action: PROCESS}, p, hub)
 			}
-			i--
-
-		case player := <-hub.Register:
-			if state == IDLE {
-				if player.RoomID == roomID {
-					return
-				}
-			}
+			return
 		}
-
+		hub.Broadcast <- createMsg(roomID, COUNT, strconv.Itoa(i))
+		i--
 	}
 }
 
@@ -400,4 +378,12 @@ func getMushrooms() map[int]Mushroom {
 	mush[51] = mushroomsLib[2]
 
 	return mush
+}
+
+func onlineArr(onlines map[string]bool) []string {
+	var res []string
+	for k := range onlines {
+		res = append(res, k)
+	}
+	return res
 }

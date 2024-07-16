@@ -176,11 +176,9 @@ func (room *Room) initGame() string {
 	// Populate hands
 	// Populate deck
 	// Wait for ready
-	handLimit := 11
+	handLimit := 10
 	players := room.Players
-	if len(players) == 10 {
-		handLimit = 10
-	}
+
 	start := 0
 	for _, player := range players {
 		dealtHand := fullDeck[start : start+handLimit]
