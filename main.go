@@ -27,7 +27,6 @@ func main() {
 
 	hub := ws.NewHub()
 	wsHandler := ws.NewHandler(hub)
-	go hub.Run()
 
 	router.InitRouter(wsHandler)
 

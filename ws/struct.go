@@ -144,9 +144,10 @@ type Room struct {
 	Ready int            `json:"ready"`
 
 	// For animation
-	Moves  [][]string `json:"moves"`
-	Ticker *time.Ticker
-	Idle   *time.Ticker
+	Moves   [][]string `json:"moves"`
+	Ticker  *time.Ticker
+	Idle    *time.Ticker
+	Stopper chan bool
 }
 
 type RoomRes struct {

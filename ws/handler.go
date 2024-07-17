@@ -75,6 +75,7 @@ func (h *Handler) CreateRoom(c *gin.Context) {
 		Moves:     [][]string{},
 		Mushrooms: getMushrooms(),
 		Online:    make(map[string]bool),
+		Stopper:   make(chan bool),
 	}
 
 	c.JSON(http.StatusOK, newPlayerRes(player))
@@ -192,24 +193,17 @@ func (h *Handler) ConnectToGame(c *gin.Context) {
 	room.Online[playerID] = true
 	player := h.hub.Rooms[roomID].Players[playerID]
 
-	// Duplicate attempts to connect
-	// if player.Conn != nil {
-	// 	player.Conn.Close()
-	// }
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-	// log.Println(err)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	log.Print("connecting...")
 	player.Message = make(chan *Message, 10)
-	// player.Ready = false
+	player.Ready = false
 	player.Conn = conn
-	// h.hub.Register <- player
-
-	go player.writeMessages()
+	room.Online[playerID] = true
+	go player.writeMessages(h.hub)
 	player.readMessages(h.hub)
 
 }

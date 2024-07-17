@@ -78,7 +78,12 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 	}
 	// showhands(room)
 	// log.Print(room)
-	hub.Broadcast <- msg
+	// hub.Broadcast <- msg
+
+	// broadcast:
+	for _, player := range room.Players {
+		player.Message <- msg
+	}
 
 }
 
