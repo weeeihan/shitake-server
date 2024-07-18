@@ -290,13 +290,21 @@ func (room *Room) timer(roomID string, i int, state int, p *Player, hub *Hub) {
 			if state == PLAY {
 				log.Println("PLAY!")
 
-				hub.Broadcast <- createMsg(roomID, COUNT, strconv.Itoa(i))
+				// hub.Broadcast <- createMsg(roomID, COUNT, strconv.Itoa(i))
+				room.broadcast(createMsg(roomID, COUNT, strconv.Itoa(i)))
 				room.gameState(&MessageReq{Action: PROCESS}, p, hub)
 			}
 			return
 		}
-		hub.Broadcast <- createMsg(roomID, COUNT, strconv.Itoa(i))
+		room.broadcast(createMsg(roomID, COUNT, strconv.Itoa(i)))
+		// hub.Broadcast <- createMsg(roomID, COUNT, strconv.Itoa(i))
 		i--
+	}
+}
+
+func (room *Room) broadcast(msg *Message) {
+	for _, p := range room.Players {
+		p.Message <- msg
 	}
 }
 
