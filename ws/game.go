@@ -75,15 +75,21 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 		msg = createMsg(room.ID, PING, fmt.Sprintf("Number of goroutines: %v", runtime.NumGoroutine()))
 		// testConn(room)
 
+	case ADDBOT:
+		room.addBot()
+
+		msg = createMsg(room.ID, ADDBOT, "Bot added!")
+
+		// case REMOVEBOT:
+
 	}
 	// showhands(room)
 	// log.Print(room)
 	// hub.Broadcast <- msg
 
 	// broadcast:
-	for _, player := range room.Players {
-		player.Message <- msg
-	}
+	log.Print("broadcasting!")
+	room.broadcast(msg)
 
 }
 
@@ -93,6 +99,10 @@ func (player *Player) leaveRoom(room *Room) *Message {
 	if room.State == GAME_END {
 		// cancel all ready
 		for _, p := range room.Players {
+			if p.IsBot {
+				continue
+			}
+
 			p.Ready = false
 			p.End = 0
 			p.DamageReport.Damage = 0
@@ -149,6 +159,9 @@ func startGame(room *Room) *Message {
 			}
 		}
 		for _, p := range room.Players {
+			if p.IsBot {
+				continue
+			}
 			p.DamageReport.RoundDamage = 0
 			p.DamageReport.RoundMushrooms = 0
 			if room.State == GAME_END || room.State == INIT {
@@ -212,9 +225,9 @@ func (room *Room) play(msgReq *MessageReq, p *Player, hub *Hub) *Message {
 	room.Select[p.ID] = sel
 	p.Play = sel
 	p.Ready = true
-	if len(room.Select) == len(room.Players) {
-		// room.gameState(&MessageReq{Action: PROCESS}, p, hub)
 
+	if len(room.Select) == lenRealPlayers(room.Players) {
+		// room.gameState(&MessageReq{Action: PROCESS}, p, hub)
 		// Start counting
 		if room.Ticker == nil {
 			room.Ticker = time.NewTicker(1 * time.Second)
@@ -230,6 +243,9 @@ func (room *Room) processCards(p *Player, hub *Hub) *Message {
 	//reset ticker
 	room.Ticker = nil
 	room.State = PROCESS
+
+	// Bot plays here?
+	room.botsPlay()
 
 	// reset moves
 	room.Moves = [][]string{}
@@ -247,6 +263,12 @@ func (room *Room) processCards(p *Player, hub *Hub) *Message {
 	if isSmallest(sortedCards[0], room) {
 		room.State = CHOOSE_ROW
 		room.Chooser = room.Played[sortedCards[0]]
+
+		// If the chooser is bot
+		if room.Players[room.Chooser].IsBot {
+			// Bot's gonna choose
+			room.rows(0, sortedCards[0], room.Players[room.Chooser], hub)
+		}
 		// Return
 		return createMsg(room.ID, CHOOSE_ROW, "CHOOSE ROW")
 	} else {
@@ -315,10 +337,30 @@ func (room *Room) playCards(hub *Hub) {
 
 }
 
+func (room *Room) addBot() {
+	// Add new AI player into the room
+	botId := getPlayerID(room.ID)
+	newBot := &Player{
+		RoomID: room.ID,
+		ID:     botId,
+		Hand:   []int{},
+		HP:     100,
+		Ready:  true,
+		Play:   -1,
+		IsBot:  true,
+		Name:   "Random name",
+	}
+	room.Players[botId] = newBot
+	log.Print("Added bot!")
+}
+
 func (player *Player) eat(row []int, room *Room) {
 	// update damage report
 	damage := damage(row, room.Mushrooms)
 	player.HP -= damage
+	if player.IsBot {
+		return
+	}
 	dr := player.DamageReport
 	dr.Damage += damage
 	dr.Mushrooms++
@@ -355,15 +397,19 @@ func endGame(room *Room) int {
 }
 
 // TESTER HANDLERS
-func showhands(room *Room) {
-	for _, p := range room.Players {
-		p.Message <- createMsg(room.ID, 100, arrIntToString(p.Hand))
-	}
-}
 
 func testConn(room *Room) {
 	log.Println("CONNECTION STATUS:")
 	for _, p := range room.Players {
 		log.Println(p.Conn)
+	}
+}
+
+func (room *Room) botsPlay() {
+	for _, p := range room.Players {
+		if p.IsBot {
+			// Bot plays
+			room.Select[p.ID] = p.Hand[0]
+		}
 	}
 }

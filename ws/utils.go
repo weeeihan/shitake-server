@@ -22,6 +22,7 @@ func newPlayer(id string, name string, roomId string) *Player {
 		Ready:   false,
 		Message: make(chan *Message, 10),
 		End:     0,
+		IsBot:   false,
 		DamageReport: &DamageReport{
 			Mushrooms:      0,
 			Damage:         0,
@@ -304,7 +305,9 @@ func (room *Room) timer(roomID string, i int, state int, p *Player, hub *Hub) {
 
 func (room *Room) broadcast(msg *Message) {
 	for _, p := range room.Players {
-		p.Message <- msg
+		if !p.IsBot {
+			p.Message <- msg
+		}
 	}
 }
 
@@ -388,10 +391,12 @@ func getMushrooms() map[int]Mushroom {
 	return mush
 }
 
-func onlineArr(onlines map[string]bool) []string {
-	var res []string
-	for k := range onlines {
-		res = append(res, k)
+func lenRealPlayers(players map[string]*Player) int {
+	count := 0
+	for _, p := range players {
+		if !p.IsBot {
+			count++
+		}
 	}
-	return res
+	return count
 }

@@ -34,6 +34,8 @@ var gamestates = map[string]int{
 	"ROW_SELECTED":      ROW_SELECTED,
 	"NEXT_PLAY":         NEXT_PLAY,
 	"RESTART":           RESTART,
+	"ADDBOT":            ADDBOT,
+	"REMOVEBOT":         REMOVEBOT,
 }
 
 var (
@@ -73,6 +75,9 @@ var (
 
 	RESTART int = 26
 
+	ADDBOT    int = 27
+	REMOVEBOT int = 28
+
 	GETCARD int = 100
 )
 
@@ -88,6 +93,7 @@ type Player struct {
 	Ready        bool          `json:"ready"`
 	End          int           `json:"end"`
 	DamageReport *DamageReport `json:"damageReport"`
+	IsBot        bool          `json:"isBot"`
 }
 
 // {"action": "", "card": num, "row": num}
@@ -196,6 +202,7 @@ type PlayerRes struct {
 	Ready        bool         `json:"ready"`
 	End          int          `json:"end"`
 	DamageReport DamageReport `json:"damageReport"`
+	IsBot        bool         `json:"isBot"`
 }
 
 type GameConstant struct {

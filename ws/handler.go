@@ -199,8 +199,16 @@ func (h *Handler) ConnectToGame(c *gin.Context) {
 		return
 	}
 
+	for _, p := range room.Players {
+		// Notify others that you just joined.
+		if p.ID == playerID || p.IsBot {
+			continue
+		}
+		p.Message <- &Message{RoomID: roomID, State: NEW_PLAYER_JOINED, Remark: "Player joined!"}
+
+	}
+
 	player.Message = make(chan *Message, 10)
-	player.Ready = false
 	player.Conn = conn
 	room.Online[playerID] = true
 	go player.writeMessages(h.hub)
@@ -291,11 +299,7 @@ func (h *Handler) LeaveRoom(c *gin.Context) {
 		delete(h.hub.Rooms, roomID)
 		c.JSON(http.StatusOK, gin.H{"Message": "Clear room"})
 	} else {
-		h.hub.Broadcast <- &Message{
-			RoomID: roomID,
-			State:  PLAYER_LEFT,
-			Remark: "Player left!",
-		}
+		r.broadcast(createMsg(r.ID, PLAYER_LEFT, "Player left room"))
 		c.JSON(http.StatusOK, gin.H{"Message": "Player left room"})
 	}
 
@@ -326,6 +330,7 @@ func (h *Handler) GetData(c *gin.Context) {
 		Ready:        r.Players[playerID].Ready,
 		End:          r.Players[playerID].End,
 		DamageReport: *r.Players[playerID].DamageReport,
+		IsBot:        r.Players[playerID].IsBot,
 	}
 
 	room := RoomRes{

@@ -12,6 +12,7 @@ func (p *Player) writeMessages(hub *Hub) {
 	defer func() {
 		// log.Println("CLOSE WRITEMSG")
 		delete(room.Online, p.ID)
+		p.Ready = false
 
 		if len(room.Online) == 0 {
 			// Start counting.
