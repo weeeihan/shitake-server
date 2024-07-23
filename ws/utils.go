@@ -152,7 +152,9 @@ func removePlayed(played map[int]string, players map[string]*Player, room *Room)
 	for card, id := range played {
 		p := players[id]
 		// reset player ready flag
-		p.Ready = false
+		if !p.IsBot {
+			p.Ready = false
+		}
 		var newHand []int
 		for _, c := range p.Hand {
 			if c != card {
@@ -238,6 +240,7 @@ func playersArr(players map[string]*Player) []*PlayerDisplay {
 			Name:  p.Name,
 			HP:    p.HP,
 			Ready: p.Ready,
+			IsBot: p.IsBot,
 		}
 		res = append(res, player)
 	}
@@ -399,4 +402,26 @@ func lenRealPlayers(players map[string]*Player) int {
 		}
 	}
 	return count
+}
+
+func randomName(room *Room) string {
+	names := []string{"Haerin", "Mushmellow", "Hanni", "Danielle", "Minji", "Hyein", "Kelly"}
+Again:
+	r := (rand.Intn(6))
+	for _, players := range room.Players {
+		if players.Name == names[r] {
+			goto Again
+		}
+	}
+
+	return names[r]
+}
+
+func (room *Room) removeBot(botName string) {
+	for _, p := range room.Players {
+		if p.Name == botName {
+			delete(room.Players, p.ID)
+			break
+		}
+	}
 }

@@ -80,7 +80,10 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 
 		msg = createMsg(room.ID, ADDBOT, "Bot added!")
 
-		// case REMOVEBOT:
+	case REMOVEBOT:
+
+		room.removeBot(msgReq.Remark)
+		msg = createMsg(room.ID, REMOVEBOT, "Bot removed!")
 
 	}
 	// showhands(room)
@@ -88,7 +91,6 @@ func (room *Room) gameState(msgReq *MessageReq, p *Player, hub *Hub) {
 	// hub.Broadcast <- msg
 
 	// broadcast:
-	log.Print("broadcasting!")
 	room.broadcast(msg)
 
 }
@@ -159,21 +161,20 @@ func startGame(room *Room) *Message {
 			}
 		}
 		for _, p := range room.Players {
-			if p.IsBot {
-				continue
+			if !p.IsBot {
+				p.DamageReport.RoundDamage = 0
+				p.DamageReport.RoundMushrooms = 0
+				if room.State == GAME_END || room.State == INIT {
+					p.HP = 100
+					p.DamageReport.Damage = 0
+					p.DamageReport.Mushrooms = 0
+					p.DamageReport.MushroomTypes = []int{}
+					// Re-get mushrooms
+					room.Mushrooms = getMushrooms()
+				}
+				p.End = 0
+				p.Ready = false
 			}
-			p.DamageReport.RoundDamage = 0
-			p.DamageReport.RoundMushrooms = 0
-			if room.State == GAME_END || room.State == INIT {
-				p.HP = 100
-				p.DamageReport.Damage = 0
-				p.DamageReport.Mushrooms = 0
-				p.DamageReport.MushroomTypes = []int{}
-				// Re-get mushrooms
-				room.Mushrooms = getMushrooms()
-			}
-			p.End = 0
-			p.Ready = false
 		}
 		room.State = CHOOSE_CARD
 
@@ -194,7 +195,7 @@ func (room *Room) initGame() string {
 	// Populate hands
 	// Populate deck
 	// Wait for ready
-	handLimit := 10
+	handLimit := 3
 	players := room.Players
 
 	start := 0
@@ -245,16 +246,21 @@ func (room *Room) processCards(p *Player, hub *Hub) *Message {
 	room.State = PROCESS
 
 	// Bot plays here?
-	room.botsPlay()
 
+	room.botsPlay()
 	// reset moves
+
 	room.Moves = [][]string{}
 	// reset played cards
 	room.Played = make(map[int]string)
+
 	for ID, sel := range room.Select {
+
 		room.Played[sel] = ID
 		room.Players[ID].Play = -1
 	}
+
+	log.Print("Remove played")
 	// Remove played card from players' hands
 	removePlayed(room.Played, room.Players, room)
 	// hub.Broadcast <- createMsg(room.ID, PROCESS, showPlayed(room))
@@ -266,8 +272,10 @@ func (room *Room) processCards(p *Player, hub *Hub) *Message {
 
 		// If the chooser is bot
 		if room.Players[room.Chooser].IsBot {
+			log.Println("Bots choosing row")
 			// Bot's gonna choose
 			room.rows(0, sortedCards[0], room.Players[room.Chooser], hub)
+			return createMsg(room.ID, PROCESS, deckTostring(room.Deck))
 		}
 		// Return
 		return createMsg(room.ID, CHOOSE_ROW, "CHOOSE ROW")
@@ -348,7 +356,7 @@ func (room *Room) addBot() {
 		Ready:  true,
 		Play:   -1,
 		IsBot:  true,
-		Name:   "Random name",
+		Name:   randomName(room),
 	}
 	room.Players[botId] = newBot
 	log.Print("Added bot!")

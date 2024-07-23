@@ -99,9 +99,10 @@ type Player struct {
 // {"action": "", "card": num, "row": num}
 
 type MessageReq struct {
-	Action int `json:"action"`
-	Card   int `json:"card"`
-	Row    int `json:"row"`
+	Action int    `json:"action"`
+	Card   int    `json:"card"`
+	Row    int    `json:"row"`
+	Remark string `json:"remark"`
 }
 
 type DamageReport struct {
@@ -224,6 +225,7 @@ type PlayerDisplay struct {
 	Name  string `json:"name"`
 	HP    int    `json:"hp"`
 	Ready bool   `json:"ready"`
+	IsBot bool   `json:"isBot"`
 }
 
 type Mushroom struct {
