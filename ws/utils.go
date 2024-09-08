@@ -128,7 +128,7 @@ func damage(row []int, mushrooms map[int]Mushroom) int {
 
 func getFullDeck() []int {
 	var deck []int
-	for i := 1; i <= 100; i++ {
+	for i := 1; i <= 200; i++ {
 		deck = append(deck, i)
 	}
 
@@ -405,9 +405,9 @@ func lenRealPlayers(players map[string]*Player) int {
 }
 
 func randomName(room *Room) string {
-	names := []string{"Haerin", "Mushmellow", "Hanni", "Danielle", "Minji", "Hyein", "Kelly"}
+	names := []string{"Haerin", "Mushmellow", "Hanni", "Danielle", "Minji", "Hyein", "Kelly", "Jew", "Tingwei", "Hendry", "James", "Allan", "Jieun"}
 Again:
-	r := (rand.Intn(6))
+	r := (rand.Intn(13))
 	for _, players := range room.Players {
 		if players.Name == names[r] {
 			goto Again

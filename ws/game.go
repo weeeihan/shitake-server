@@ -195,7 +195,7 @@ func (room *Room) initGame() string {
 	// Populate hands
 	// Populate deck
 	// Wait for ready
-	handLimit := 3
+	handLimit := 10
 	players := room.Players
 
 	start := 0
